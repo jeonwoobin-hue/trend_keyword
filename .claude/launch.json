@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "trendfit-home",
+      "runtimeExecutable": "streamlit",
+      "runtimeArgs": ["run", "Home.py", "--server.headless", "true", "--server.port", "$PORT"],
+      "port": 8501,
+      "autoPort": true
+    }
+  ]
+}
