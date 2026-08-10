@@ -22,7 +22,7 @@
 | 급상승 알림 | ALERT-001, 002 | FR-ALERT-001 키워드 등록, FR-ALERT-002 임계치 설정, FR-ALERT-004 알림 히스토리 | 목업 구현 (`pages/5_급상승_알림`, `pages/11_알림함`, 세션 동안만 유지). FR-ALERT-002(임계치 설정, SRS는 P2로 분류)는 functional-spec의 FR-ALERT-001 등록 플로우에 포함돼 함께 구현됨. 실제 발송 배치 워커(FR-ALERT-003)가 없어 알림함은 등록 키워드 기준 이력을 시뮬레이션 |
 | 콘텐츠 큐레이션 | CURATE-001, 002 | FR-CURATE-001 관련 콘텐츠 큐레이션 | CURATE-001 목업 구현 (`pages/8_콘텐츠_큐레이션`, 커서 기반 "더 보기") — 플랫폼 필터(FR-CURATE-002, P2)·스크랩(FR-CURATE-003, P3)·CURATE-002 상세는 미착수 |
 | 프로필/마이페이지 | MY-001 | FR-PROFILE-001 프로필 조회, FR-PROFILE-002 관심사 수정 | 목업 구현 (`pages/6_마이페이지`) |
-| 관리자 | ADMIN-001 | FR-ADMIN-001 데이터 수집 모니터링 | 목업 구현 (`pages/9_관리자`) — 외부 연동 상태는 실제 미구현 값 그대로 표시(가짜 수치 없음), 사용자·키워드 관리(FR-ADMIN-002, P2)는 미착수. 역할(관리자) 필드가 없어 로그인 여부만 확인 |
+| 관리자 | ADMIN-001, 002 | FR-ADMIN-001 데이터 수집 모니터링, FR-ADMIN-002 사용자·키워드 관리 | 목업 구현 (`pages/9_관리자`, `pages/12_사용자_키워드_관리`) — 외부 연동 상태는 실제 미구현 값 그대로 표시(가짜 수치 없음), 사용자 목록·키워드 통계·신고 내역은 샘플 데이터, 키워드 블랙리스트는 실제 CRUD. 역할(관리자) 필드가 없어 로그인 여부만 확인 |
 
 ## 구현 방식 참고
 
@@ -37,7 +37,9 @@
   IA상 비로그인 사용자도 열람 가능(`G/U`)해 가드를 적용하지 않았습니다.
 - `services/`의 `dashboard_service.py`, `alert_service.py`, `profile_service.py`, `auth_service.py`,
   `report_service.py`, `curation_service.py`, `admin_service.py` 7개 모듈은 `tests/services/`에
-  pytest 57건으로 커버되어 있습니다(`python -m pytest -q`).
+  pytest 65건으로 커버되어 있습니다(`python -m pytest -q`).
+- 이 저장소는 [github.com/jeonwoobin-hue/trend_keyword](https://github.com/jeonwoobin-hue/trend_keyword)에
+  `main` 브랜치로 푸시되어 있습니다.
 - 각 서비스 모듈은 실제 연동 시 내부 구현만 교체하고 함수 시그니처/반환 타입은 유지하도록
   설계되어 있습니다(모듈 docstring에 명시).
 
