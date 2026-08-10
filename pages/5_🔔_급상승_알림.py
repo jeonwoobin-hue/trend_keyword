@@ -5,7 +5,6 @@ import streamlit as st
 from app.auth_guard import require_login
 from app.session import init_session_state
 from config.constants import (
-    DEFAULT_NOTIFY_CHANNELS,
     DEFAULT_THRESHOLD_SCORE,
     MAX_ALERT_KEYWORD_LENGTH,
     MAX_ALERT_KEYWORDS,
@@ -52,9 +51,10 @@ with st.form(key=WidgetKeys.ALERT_FORM, clear_on_submit=True):
     channel_values = st.multiselect(
         "알림 수신 방식",
         options=[value for value, _ in NOTIFY_CHANNELS],
-        default=DEFAULT_NOTIFY_CHANNELS,
+        default=st.session_state[SessionKeys.NOTIFY_CHANNEL_PREFERENCE],
         format_func=lambda value: channel_labels[value],
         key=WidgetKeys.ALERT_CHANNEL_MULTISELECT,
+        help="기본값은 마이페이지 > 계정 설정에서 바꿀 수 있습니다.",
     )
     submitted = st.form_submit_button("키워드 추가", type="primary")
 

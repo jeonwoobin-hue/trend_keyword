@@ -1,7 +1,7 @@
-"""services/curation_service.py 단위 테스트 (functional-spec FR-CURATE-001)."""
+"""services/curation_service.py 단위 테스트 (functional-spec FR-CURATE-001, SRS FR-CURATE-003)."""
 
 from config.constants import CURATION_PAGE_SIZE, CURATION_TOTAL_MOCK_ITEMS
-from services.curation_service import get_curated_contents
+from services.curation_service import add_scrap, get_curated_contents, remove_scrap
 
 
 def test_get_curated_contents_first_page_size_and_cursor():
@@ -56,3 +56,62 @@ def test_get_curated_contents_marks_some_items_unavailable():
             break
 
     assert seen_unavailable
+
+
+def test_get_curated_contents_platform_filter_restricts_results():
+    result = get_curated_contents("패션", None, platforms=["youtube"])
+
+    assert result.contents
+    assert all(item.platform == "youtube" for item in result.contents)
+
+
+def test_get_curated_contents_platform_filter_paginates_over_filtered_pool_only():
+    keyword = "패션"
+    platforms = ["youtube", "news"]
+    seen_ids: list[str] = []
+    cursor = None
+
+    for _ in range(10):
+        page = get_curated_contents(keyword, cursor, platforms)
+        seen_ids.extend(item.content_id for item in page.contents)
+        cursor = page.next_cursor
+        if cursor is None:
+            break
+
+    assert cursor is None
+    assert 0 < len(seen_ids) < CURATION_TOTAL_MOCK_ITEMS
+    assert len(set(seen_ids)) == len(seen_ids)
+
+
+def test_get_curated_contents_empty_platform_list_returns_all():
+    filtered_empty = get_curated_contents("패션", None, platforms=[])
+    unfiltered = get_curated_contents("패션", None)
+
+    assert [i.content_id for i in filtered_empty.contents] == [i.content_id for i in unfiltered.contents]
+
+
+def test_add_scrap_appends_new_content():
+    content = get_curated_contents("패션", None).contents[0]
+
+    result = add_scrap([], content)
+
+    assert result == [content]
+
+
+def test_add_scrap_is_idempotent_for_same_content():
+    content = get_curated_contents("패션", None).contents[0]
+    once = add_scrap([], content)
+
+    twice = add_scrap(once, content)
+
+    assert twice == once
+    assert len(twice) == 1
+
+
+def test_remove_scrap_filters_target_only():
+    first, second = get_curated_contents("패션", None).contents[:2]
+    scraps = add_scrap(add_scrap([], first), second)
+
+    remaining = remove_scrap(scraps, first.content_id)
+
+    assert remaining == [second]

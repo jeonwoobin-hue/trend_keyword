@@ -1,8 +1,15 @@
-"""services/dashboard_service.py 단위 테스트 (functional-spec FR-DASH-001/FR-DASH-004)."""
+"""services/dashboard_service.py 단위 테스트 (functional-spec FR-DASH-001/FR-DASH-004, SRS FR-DASH-005)."""
 
 import pytest
 
-from config.constants import CATEGORIES, CATEGORY_ALL, DASHBOARD_TOP_N, RELATED_KEYWORDS_TOP_N
+from config.constants import (
+    AGE_GROUP_OPTIONS,
+    CATEGORIES,
+    CATEGORY_ALL,
+    DASHBOARD_TOP_N,
+    DEMOGRAPHIC_GENDERS,
+    RELATED_KEYWORDS_TOP_N,
+)
 from services.dashboard_service import get_dashboard_keywords, get_keyword_detail
 
 PERIODS = ["24h", "1w", "1m"]
@@ -77,3 +84,17 @@ def test_get_keyword_detail_is_deterministic():
     assert first.trend_series == second.trend_series
     assert first.sentiment == second.sentiment
     assert first.related_keywords == second.related_keywords
+    assert first.demographics == second.demographics
+
+
+def test_get_keyword_detail_demographic_weights_cover_all_groups_and_sum_to_one():
+    dashboard = get_dashboard_keywords(category="fashion", period="1w")
+    detail = get_keyword_detail(dashboard.keywords[0].keyword_id, "1w")
+
+    expected_age_groups = {group_id for group_id, _ in AGE_GROUP_OPTIONS}
+    expected_genders = {group_id for group_id, _ in DEMOGRAPHIC_GENDERS}
+
+    assert set(detail.demographics.age_group_weights) == expected_age_groups
+    assert set(detail.demographics.gender_weights) == expected_genders
+    assert sum(detail.demographics.age_group_weights.values()) == pytest.approx(1.0, abs=0.01)
+    assert sum(detail.demographics.gender_weights.values()) == pytest.approx(1.0, abs=0.01)

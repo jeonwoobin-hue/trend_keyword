@@ -6,9 +6,11 @@ import streamlit as st
 from app.auth_guard import require_login
 from app.session import init_session_state
 from config.constants import (
+    AGE_GROUP_OPTIONS,
     CATEGORIES,
     DASHBOARD_CACHE_TTL_SECONDS,
     DEFAULT_PERIOD,
+    DEMOGRAPHIC_GENDERS,
     PERIOD_OPTIONS,
     SessionKeys,
     WidgetKeys,
@@ -84,6 +86,25 @@ else:
     pos_col.metric("긍정", f"{detail.sentiment.positive:.0%}")
     neg_col.metric("부정", f"{detail.sentiment.negative:.0%}")
     neu_col.metric("중립", f"{detail.sentiment.neutral:.0%}")
+
+st.divider()
+
+st.markdown("#### 연령·성별 관심도")
+st.caption("실제 데이터 소스 연동 전 단계로, 상대 비중을 목(mock) 데이터로 보여줍니다.")
+
+age_labels = dict(AGE_GROUP_OPTIONS)
+age_df = pd.DataFrame(
+    [
+        {"연령대": age_labels.get(group_id, group_id), "비중": weight}
+        for group_id, weight in detail.demographics.age_group_weights.items()
+    ]
+).set_index("연령대")
+st.bar_chart(age_df, horizontal=True)
+
+gender_labels = dict(DEMOGRAPHIC_GENDERS)
+gender_cols = st.columns(len(detail.demographics.gender_weights))
+for col, (gender_id, weight) in zip(gender_cols, detail.demographics.gender_weights.items()):
+    col.metric(gender_labels.get(gender_id, gender_id), f"{weight:.0%}")
 
 st.divider()
 

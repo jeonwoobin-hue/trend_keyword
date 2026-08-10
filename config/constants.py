@@ -31,9 +31,12 @@ class SessionKeys:
     CURATION_CURSOR = "curation_cursor"
     CURATION_ACTIVE_KEYWORD = "curation_active_keyword"
     CURATION_KEYWORD_FILTER = "curation_keyword_filter"
+    CURATION_PLATFORM_FILTER = "curation_platform_filter"
+    SCRAPPED_CONTENTS = "scrapped_contents"
     ADMIN_SPIKE_BATCH_STATUS = "admin_spike_batch_status"
     ADMIN_USERS = "admin_users"
     ADMIN_BLACKLIST = "admin_blacklist"
+    NOTIFY_CHANNEL_PREFERENCE = "notify_channel_preference"
 
 
 class WidgetKeys:
@@ -69,6 +72,16 @@ class WidgetKeys:
     REPORT_LIST_CATEGORY_FILTER = "report_list_category_filter"
     ADMIN_BLACKLIST_FORM = "admin_blacklist_form"
     ADMIN_BLACKLIST_INPUT = "admin_blacklist_input"
+    RESET_EMAIL_FORM = "reset_email_form"
+    RESET_EMAIL_INPUT = "reset_email_input"
+    RESET_CODE_FORM = "reset_code_form"
+    RESET_CODE_INPUT = "reset_code_input"
+    RESET_PASSWORD_FORM = "reset_password_form"
+    RESET_NEW_PASSWORD_INPUT = "reset_new_password_input"
+    RESET_NEW_PASSWORD_CONFIRM_INPUT = "reset_new_password_confirm_input"
+    CURATION_PLATFORM_MULTISELECT = "curation_platform_multiselect"
+    ACCOUNT_NOTIFY_CHANNEL_MULTISELECT = "account_notify_channel_multiselect"
+    ACCOUNT_DELETE_CONFIRM_CHECKBOX = "account_delete_confirm_checkbox"
 
 
 # --- 관심 분야 (SRS FR-ONBOARD-001 / functional-spec ONBOARD-001과 동일 목록 재사용) ---
@@ -98,6 +111,14 @@ DASHBOARD_CACHE_TTL_SECONDS = 3600  # NFR-PERF-002: 최대 1시간 이내 데이
 RELATED_KEYWORDS_TOP_N = 10  # "연관 키워드 Top 10" 명시
 # 언급량이 이 값 미만이면 감성분석 데이터 부족(VALID_003)으로 간주해 해당 영역을 비활성화한다.
 SENTIMENT_MIN_MENTION_COUNT = 2000
+
+# --- 연령·성별 관심도 가중치 보정(DASH-002) 정책 (SRS FR-DASH-005, P2) ---
+# 실제 데이터 소스(유튜브/X 등) 미확보로 보정 산식이 미정이다(docs/KPI_Definitions.md 참고).
+# 연령대는 온보딩의 AGE_GROUP_OPTIONS를 재사용하고, 성별은 집계 표시에 맞게 남/여만 사용한다.
+DEMOGRAPHIC_GENDERS = [
+    ("male", "남성"),
+    ("female", "여성"),
+]
 
 # --- 급상승 알림(ALERT-001) 정책 (functional-spec FR-ALERT-001) ---
 MAX_ALERT_KEYWORDS = 20  # 사용자당 최대 등록 키워드 수
@@ -159,6 +180,13 @@ MIN_PASSWORD_LENGTH = 8
 # 실제 이메일 발송(SMTP) 연동 전까지 인증번호를 화면에 직접 노출하는 목(mock) 인증이다.
 SIGNUP_VERIFICATION_CODE_LENGTH = 6
 
+# --- 소셜 로그인(COM-002) 정책 (SRS FR-AUTH-002, P2) ---
+# 실제 OAuth 연동 전까지 버튼 클릭 시 즉시 로그인 처리하는 목(mock)이다.
+SOCIAL_PROVIDERS = [
+    ("google", "구글"),
+    ("kakao", "카카오"),
+]
+
 # --- 인사이트 리포트(REPORT-001) 정책 (functional-spec FR-REPORT-001) ---
 MAX_REPORT_TITLE_LENGTH = 50  # 미입력 시 자동 생성
 WORD_CLOUD_TOP_N = 15
@@ -176,6 +204,13 @@ SIMILAR_CATEGORIES: dict[str, list[str]] = {
     "finance": ["it_tech"],
 }
 SIMILAR_GROUP_KEYWORDS_TOP_N = 5
+
+# --- 리포트 PDF/공유(REPORT-002) 정책 (SRS FR-REPORT-004) ---
+# PDF 한글 렌더링은 Windows 시스템 폰트(맑은 고딕)에 의존한다. 리눅스/컨테이너 배포 시
+# 이 경로가 없으므로, 한글 폰트 파일을 프로젝트에 번들링하고 경로를 교체해야 한다.
+REPORT_PDF_FONT_PATH = "C:/Windows/Fonts/malgun.ttf"
+# 실제 백엔드/영속 저장소가 없어, 다른 세션·기기에서는 열리지 않는 표시용 목 링크다.
+REPORT_SHARE_LINK_BASE_URL = "https://trendfit.app/reports"
 
 # --- 콘텐츠 큐레이션(CURATE-001) 정책 (functional-spec FR-CURATE-001) ---
 CURATION_PAGE_SIZE = 10  # 커서 1회 요청당 반환 개수

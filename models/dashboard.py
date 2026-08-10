@@ -55,6 +55,15 @@ class SentimentRatio(BaseModel):
     neutral: float
 
 
+class DemographicWeights(BaseModel):
+    """연령·성별 관심도 가중치 보정 (SRS FR-DASH-005, P2). 각 그룹 비중의 합은 1.0."""
+
+    age_group_weights: dict[str, float] = Field(alias="ageGroupWeights")
+    gender_weights: dict[str, float] = Field(alias="genderWeights")
+
+    model_config = {"populate_by_name": True}
+
+
 class KeywordDetail(BaseModel):
     """키워드 상세(DASH-002) 응답. `sentiment`는 데이터 부족 시 None(VALID_003)."""
 
@@ -64,5 +73,6 @@ class KeywordDetail(BaseModel):
     trend_series: list[TrendPoint] = Field(alias="trendSeries")
     sentiment: SentimentRatio | None = None
     related_keywords: list[str] = Field(alias="relatedKeywords")
+    demographics: DemographicWeights = Field(alias="demographics")
 
     model_config = {"populate_by_name": True}

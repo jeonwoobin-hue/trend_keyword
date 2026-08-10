@@ -1,24 +1,30 @@
 """트렌드 대시보드 데이터 조회.
 
 실제 외부 데이터 연동(`services/*_client.py`)이 붙기 전까지, 이 모듈은
-functional-spec.md FR-DASH-001/FR-DASH-004 응답 계약과 동일한 형태의 목(mock) 데이터를 생성한다.
-실제 연동 시 내부 구현만 실제 API 클라이언트 호출로 교체하고, 공개 함수의 시그니처와
-반환 타입(`DashboardKeywordsResult`, `KeywordDetail`)은 유지한다.
+functional-spec.md FR-DASH-001/FR-DASH-004, SRS FR-DASH-005 응답 계약과 동일한 형태의
+목(mock) 데이터를 생성한다. 실제 연동 시 내부 구현만 실제 API 클라이언트 호출로 교체하고,
+공개 함수의 시그니처와 반환 타입(`DashboardKeywordsResult`, `KeywordDetail`)은 유지한다.
+
+연령·성별 관심도 가중치 보정(FR-DASH-005)은 실제 데이터 소스 미확보로 산정 방법이 미정이라
+(docs/KPI_Definitions.md 참고), 그룹별 상대 비중만 무작위로 생성해 보여준다.
 """
 
 import random
 from datetime import datetime, timezone
 
 from config.constants import (
+    AGE_GROUP_OPTIONS,
     CATEGORIES,
     CATEGORY_ALL,
     DASHBOARD_TOP_N,
+    DEMOGRAPHIC_GENDERS,
     RELATED_KEYWORDS_TOP_N,
     SENTIMENT_MIN_MENTION_COUNT,
 )
 from models.dashboard import (
     DashboardKeywordsResult,
     DashboardMeta,
+    DemographicWeights,
     KeywordDetail,
     SentimentRatio,
     TrendKeyword,
@@ -149,6 +155,11 @@ def _build_keyword_detail(keyword_id: str, name: str, category: str, period: str
     related_pool = [kw for pool in _MOCK_KEYWORD_POOLS.values() for _, kw in pool if kw != name]
     related_keywords = rng.sample(related_pool, k=min(RELATED_KEYWORDS_TOP_N, len(related_pool)))
 
+    demographics = DemographicWeights(
+        age_group_weights=_build_demographic_weights(rng, [g for g, _ in AGE_GROUP_OPTIONS]),
+        gender_weights=_build_demographic_weights(rng, [g for g, _ in DEMOGRAPHIC_GENDERS]),
+    )
+
     return KeywordDetail(
         keyword_id=keyword_id,
         keyword=name,
@@ -156,7 +167,15 @@ def _build_keyword_detail(keyword_id: str, name: str, category: str, period: str
         trend_series=trend_series,
         sentiment=sentiment,
         related_keywords=related_keywords,
+        demographics=demographics,
     )
+
+
+def _build_demographic_weights(rng: random.Random, group_ids: list[str]) -> dict[str, float]:
+    """그룹별 상대 비중을 생성한다(합계 1.0). 산정 방법은 docs/KPI_Definitions.md 참고."""
+    raw_values = [rng.uniform(0.5, 1.5) for _ in group_ids]
+    total = sum(raw_values)
+    return {group_id: round(value / total, 3) for group_id, value in zip(group_ids, raw_values)}
 
 
 def _generate_trend_points(rng: random.Random, period: str) -> list[TrendPoint]:

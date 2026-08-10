@@ -1,4 +1,4 @@
-"""services/auth_service.py 단위 테스트 (SRS FR-AUTH-001/FR-AUTH-003)."""
+"""services/auth_service.py 단위 테스트 (SRS FR-AUTH-001~004)."""
 
 import pytest
 
@@ -8,7 +8,10 @@ from services.auth_service import (
     complete_signup,
     is_verification_code_valid,
     login,
+    login_with_social_provider,
+    request_password_reset,
     request_signup_verification,
+    reset_password,
 )
 
 
@@ -79,3 +82,47 @@ def test_complete_signup_derives_display_name_from_email():
 
     assert user.email == "new.user@example.com"
     assert user.display_name == "new.user"
+
+
+def test_request_password_reset_returns_code_of_configured_length():
+    code = request_password_reset("existing@example.com")
+
+    assert len(code) == SIGNUP_VERIFICATION_CODE_LENGTH
+    assert code.isdigit()
+
+
+def test_request_password_reset_empty_email_raises_valid_001():
+    with pytest.raises(AuthError) as exc_info:
+        request_password_reset("   ")
+    assert exc_info.value.code == "VALID_001"
+
+
+def test_request_password_reset_invalid_email_raises_valid_002():
+    with pytest.raises(AuthError) as exc_info:
+        request_password_reset("not-an-email")
+    assert exc_info.value.code == "VALID_002"
+
+
+def test_reset_password_success_returns_none():
+    assert reset_password("newpassword123", "newpassword123") is None
+
+
+def test_reset_password_too_short_raises_valid_002():
+    short_password = "a" * (MIN_PASSWORD_LENGTH - 1)
+
+    with pytest.raises(AuthError) as exc_info:
+        reset_password(short_password, short_password)
+    assert exc_info.value.code == "VALID_002"
+
+
+def test_reset_password_mismatch_raises_valid_002():
+    with pytest.raises(AuthError) as exc_info:
+        reset_password("newpassword123", "different123")
+    assert exc_info.value.code == "VALID_002"
+
+
+def test_login_with_social_provider_derives_user_from_provider():
+    user = login_with_social_provider("google")
+
+    assert user.email == "google_user@example.com"
+    assert user.display_name == "google_user"

@@ -3,8 +3,8 @@
 import streamlit as st
 
 from app.session import init_session_state
-from config.constants import SessionKeys, WidgetKeys
-from services.auth_service import AuthError, login
+from config.constants import SessionKeys, SOCIAL_PROVIDERS, WidgetKeys
+from services.auth_service import AuthError, login, login_with_social_provider
 
 st.set_page_config(page_title="로그인 - TrendFit", page_icon="🔑", layout="wide")
 init_session_state()
@@ -44,16 +44,17 @@ if submitted:
         st.switch_page(_next_page_after_login())
 
 st.divider()
+st.caption("실제 OAuth 연동 전 단계로, 버튼을 누르면 바로 로그인 처리됩니다.")
 
 social_col1, social_col2 = st.columns(2)
-with social_col1:
-    st.button(
-        "구글로 로그인", disabled=True, use_container_width=True, help="소셜 로그인(FR-AUTH-002, P2)은 준비 중입니다."
-    )
-with social_col2:
-    st.button(
-        "카카오로 로그인", disabled=True, use_container_width=True, help="소셜 로그인(FR-AUTH-002, P2)은 준비 중입니다."
-    )
+social_columns = {SOCIAL_PROVIDERS[0][0]: social_col1, SOCIAL_PROVIDERS[1][0]: social_col2}
+for provider_id, provider_label in SOCIAL_PROVIDERS:
+    with social_columns[provider_id]:
+        if st.button(f"{provider_label}로 로그인", key=f"social_login_{provider_id}", use_container_width=True):
+            social_user = login_with_social_provider(provider_id)
+            st.session_state[SessionKeys.IS_AUTHENTICATED] = True
+            st.session_state[SessionKeys.AUTH_USER] = social_user
+            st.switch_page(_next_page_after_login())
 
 link_col1, link_col2 = st.columns(2)
 with link_col1:
@@ -61,4 +62,4 @@ with link_col1:
         st.switch_page("pages/1_🧾_회원가입.py")
 with link_col2:
     if st.button("비밀번호 찾기", use_container_width=True):
-        st.info("비밀번호 재설정(FR-AUTH-004, P2)은 준비 중입니다.")
+        st.switch_page("pages/13_🔓_비밀번호_재설정.py")

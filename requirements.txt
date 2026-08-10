@@ -2,3 +2,4 @@ streamlit==1.59.1
 pydantic==2.13.4
 pandas==3.0.3
 pytest==9.1.1
+fpdf2==2.8.8

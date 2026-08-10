@@ -1,8 +1,10 @@
-"""콘텐츠 큐레이션 조회 도메인 로직 (functional-spec FR-CURATE-001).
+"""콘텐츠 큐레이션 조회 및 스크랩 도메인 로직 (functional-spec FR-CURATE-001, SRS FR-CURATE-003).
 
 실제 외부 콘텐츠 연동(유튜브/인스타그램/뉴스/X API 등)이 붙기 전까지, 이 모듈은
 커서 기반 페이지네이션 계약과 동일한 형태의 목(mock) 데이터를 생성한다. 실제 연동 시
 `get_curated_contents()` 내부만 교체하고 시그니처/반환 타입(`CurationResult`)은 유지한다.
+스크랩 목록은 실제 DB가 붙기 전까지 호출부(현재는 `st.session_state`)가 들고 있고,
+이 모듈은 추가/제거 순수 로직만 담당한다.
 """
 
 from datetime import datetime, timedelta, timezone
@@ -25,22 +27,40 @@ _DEFAULT_TOPIC = "관심 키워드"
 _UNAVAILABLE_EVERY_N = 7
 
 
-def get_curated_contents(keyword: str | None, cursor: str | None) -> CurationResult:
-    """키워드(선택) 관련 콘텐츠를 커서 기준으로 `CURATION_PAGE_SIZE`개씩 반환한다.
+def get_curated_contents(
+    keyword: str | None, cursor: str | None, platforms: list[str] | None = None
+) -> CurationResult:
+    """키워드(선택)·플랫폼(선택) 조건에 맞는 콘텐츠를 커서 기준으로 `CURATION_PAGE_SIZE`개씩 반환한다.
 
     Args:
         keyword: 특정 키워드 경유 진입 시 해당 키워드. 없으면 일반 피드.
         cursor: 이전 응답의 `next_cursor`. 없으면 첫 페이지.
+        platforms: 필터링할 플랫폼 값 목록(`CURATION_PLATFORMS` 참고). 없거나 빈 리스트면 전체.
     """
     topic = keyword or _DEFAULT_TOPIC
     offset = int(cursor) if cursor else 0
 
     pool = _build_mock_pool(topic)
+    if platforms:
+        pool = [item for item in pool if item.platform in platforms]
+
     page = pool[offset : offset + CURATION_PAGE_SIZE]
     next_offset = offset + CURATION_PAGE_SIZE
     next_cursor = str(next_offset) if next_offset < len(pool) else None
 
     return CurationResult(contents=page, next_cursor=next_cursor)
+
+
+def add_scrap(existing: list[ContentItem], content: ContentItem) -> list[ContentItem]:
+    """콘텐츠를 스크랩 목록에 추가한다 (FR-CURATE-003). 이미 있으면 그대로 반환한다."""
+    if any(item.content_id == content.content_id for item in existing):
+        return existing
+    return [*existing, content]
+
+
+def remove_scrap(existing: list[ContentItem], content_id: str) -> list[ContentItem]:
+    """스크랩 목록에서 콘텐츠를 제거한다."""
+    return [item for item in existing if item.content_id != content_id]
 
 
 def _build_mock_pool(topic: str) -> list[ContentItem]:

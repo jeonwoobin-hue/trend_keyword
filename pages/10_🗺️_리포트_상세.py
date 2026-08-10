@@ -6,6 +6,7 @@ import streamlit as st
 from app.auth_guard import require_login
 from app.session import init_session_state
 from config.constants import CATEGORIES, PERIOD_OPTIONS, SessionKeys, SIMILAR_CATEGORIES
+from services.report_export_service import ReportExportError, build_report_pdf, build_share_link
 from services.report_service import get_report_by_id
 
 st.set_page_config(page_title="리포트 상세 - TrendFit", page_icon="🗺️", layout="wide")
@@ -81,6 +82,26 @@ else:
     st.caption("비교할 유사 분야 데이터가 없습니다.")
 
 st.divider()
-st.caption("리포트 저장·공유·PDF 다운로드(FR-REPORT-004, P2)는 아직 준비 중입니다.")
+st.markdown("#### 저장 및 공유")
+
+pdf_col, share_col = st.columns(2)
+with pdf_col:
+    try:
+        pdf_bytes = build_report_pdf(report)
+    except ReportExportError as error:
+        st.error(error.message)
+    else:
+        st.download_button(
+            "PDF 다운로드",
+            data=pdf_bytes,
+            file_name=f"{report.title}.pdf",
+            mime="application/pdf",
+            use_container_width=True,
+        )
+with share_col:
+    st.text_input("공유 링크", value=build_share_link(report.report_id), disabled=True)
+    st.caption("실제 백엔드 연동 전 단계로, 다른 세션·기기에서는 열리지 않는 표시용 링크입니다.")
+
+st.divider()
 if st.button("목록으로"):
     st.switch_page("pages/7_📰_인사이트_리포트.py")

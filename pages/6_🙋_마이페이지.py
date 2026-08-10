@@ -11,6 +11,7 @@ from config.constants import (
     PURPOSE_OPTIONS,
     SessionKeys,
 )
+from services.curation_service import remove_scrap
 
 st.set_page_config(page_title="마이페이지 - TrendFit", page_icon="🙋", layout="wide")
 init_session_state()
@@ -60,10 +61,36 @@ if st.button("급상승 알림 설정하러 가기"):
 
 st.divider()
 
-st.markdown("#### 계정")
-if st.button("로그아웃", type="primary"):
-    st.session_state[SessionKeys.IS_AUTHENTICATED] = False
-    st.session_state[SessionKeys.AUTH_USER] = None
-    st.switch_page("Home.py")
+st.markdown("#### 스크랩한 콘텐츠")
+scrapped_contents = st.session_state[SessionKeys.SCRAPPED_CONTENTS]
 
-st.caption("알림 수신 설정·회원 탈퇴(MY-002)와 콘텐츠 스크랩(FR-CURATE-003, P3)은 아직 준비 중입니다.")
+if not scrapped_contents:
+    st.info("스크랩한 콘텐츠가 없습니다.")
+    if st.button("콘텐츠 큐레이션 보러 가기"):
+        st.switch_page("pages/8_🎬_콘텐츠_큐레이션.py")
+else:
+    for content in scrapped_contents:
+        with st.container(border=True):
+            title_col, remove_col = st.columns([5, 1])
+            with title_col:
+                st.markdown(f"**{content.title}**")
+                st.caption(f"{content.source} · {content.published_at:%Y-%m-%d}")
+            with remove_col:
+                if st.button("제거", key=f"scrap_remove_{content.content_id}", use_container_width=True):
+                    st.session_state[SessionKeys.SCRAPPED_CONTENTS] = remove_scrap(
+                        scrapped_contents, content.content_id
+                    )
+                    st.rerun()
+
+st.divider()
+
+st.markdown("#### 계정")
+account_col, logout_col = st.columns(2)
+with account_col:
+    if st.button("⚙️ 계정 설정", use_container_width=True):
+        st.switch_page("pages/14_⚙️_계정_설정.py")
+with logout_col:
+    if st.button("로그아웃", type="primary", use_container_width=True):
+        st.session_state[SessionKeys.IS_AUTHENTICATED] = False
+        st.session_state[SessionKeys.AUTH_USER] = None
+        st.switch_page("Home.py")
