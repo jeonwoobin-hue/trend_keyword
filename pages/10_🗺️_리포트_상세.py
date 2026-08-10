@@ -5,7 +5,7 @@ import streamlit as st
 
 from app.auth_guard import require_login
 from app.session import init_session_state
-from config.constants import CATEGORIES, PERIOD_OPTIONS, SessionKeys
+from config.constants import CATEGORIES, PERIOD_OPTIONS, SessionKeys, SIMILAR_CATEGORIES
 from services.report_service import get_report_by_id
 
 st.set_page_config(page_title="리포트 상세 - TrendFit", page_icon="🗺️", layout="wide")
@@ -68,6 +68,17 @@ if report.recommended_keywords:
     st.markdown(" ".join(f":blue-badge[{kw}]" for kw in report.recommended_keywords))
 else:
     st.caption("추천 키워드가 없습니다.")
+
+st.divider()
+st.markdown("#### 유사 관심사 비교 추천 키워드")
+similar_category_labels = [
+    dict(CATEGORIES).get(c, c) for c in SIMILAR_CATEGORIES.get(report.category, [])
+]
+if report.similar_group_keywords:
+    st.caption(f"유사 분야({', '.join(similar_category_labels)}) 데이터를 비교해 추가로 추천합니다.")
+    st.markdown(" ".join(f":violet-badge[{kw}]" for kw in report.similar_group_keywords))
+else:
+    st.caption("비교할 유사 분야 데이터가 없습니다.")
 
 st.divider()
 st.caption("리포트 저장·공유·PDF 다운로드(FR-REPORT-004, P2)는 아직 준비 중입니다.")

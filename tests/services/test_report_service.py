@@ -6,6 +6,8 @@ from config.constants import (
     MAX_REPORT_TITLE_LENGTH,
     NETWORK_GRAPH_NODE_TOP_N,
     REPORT_RECOMMENDED_KEYWORDS_TOP_N,
+    SIMILAR_CATEGORIES,
+    SIMILAR_GROUP_KEYWORDS_TOP_N,
 )
 from services.dashboard_service import get_dashboard_keywords
 from services.report_service import ReportValidationError, generate_report, get_report_by_id
@@ -86,3 +88,26 @@ def test_get_report_by_id_returns_none_when_missing():
     report = generate_report("fashion", "1w", None)
 
     assert get_report_by_id([report], "no_such_id") is None
+
+
+def test_generate_report_similar_group_keywords_come_from_similar_categories():
+    report = generate_report("fashion", "1w", None)
+
+    similar_categories = SIMILAR_CATEGORIES["fashion"]
+    candidate_keywords = {
+        keyword.keyword
+        for category in similar_categories
+        for keyword in get_dashboard_keywords(category=category, period="1w").keywords
+    }
+
+    assert report.similar_group_keywords
+    assert len(report.similar_group_keywords) <= SIMILAR_GROUP_KEYWORDS_TOP_N
+    # 유사 그룹(beauty/travel)에서만 추천되고, 리포트 자체 분야(fashion)는 섞이지 않아야 한다.
+    assert all(kw in candidate_keywords for kw in report.similar_group_keywords)
+
+
+def test_generate_report_similar_group_keywords_is_deterministic():
+    first = generate_report("fashion", "1w", None)
+    second = generate_report("fashion", "1w", None)
+
+    assert first.similar_group_keywords == second.similar_group_keywords

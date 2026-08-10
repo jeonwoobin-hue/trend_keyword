@@ -24,14 +24,17 @@
 - 사용자·키워드 관리(ADMIN-002) 구현 — `pages/12_사용자_키워드_관리`, 사용자 목록/등록 키워드
   통계/신고 내역은 샘플 데이터, 키워드 블랙리스트는 실제 CRUD(세션 저장). `product/Backlog.md`
   BL-011 완료로 정정
-- `tests/services/`에 서비스 계층 pytest 총 65건 작성 (dashboard/alert/profile/auth/report/
+- Git 저장소 초기화 및 첫 커밋/푸시 —
+  [github.com/jeonwoobin-hue/trend_keyword](https://github.com/jeonwoobin-hue/trend_keyword) `main`
+  브랜치로 전체 코드베이스 최초 반영
+- 유사 관심사 비교 추천 키워드(REPORT-002, FR-REPORT-005) 구현 — 고정 분야 매핑
+  (`SIMILAR_CATEGORIES`: 패션↔뷰티↔여행, IT테크↔재테크) 기반 목 데이터. `docs/KPI_Definitions.md`의
+  "산정 방법: 미정"을 확정 내용으로 갱신, `product/Backlog.md` BL-005 완료로 정정
+- `tests/services/`에 서비스 계층 pytest 총 67건 작성 (dashboard/alert/profile/auth/report/
   curation/admin 7개 모듈)
 - `docs/Feature_Roadmap.md` 구현 현황을 위 내용 기준으로 갱신
 - 위 화면들은 전부 `services/`의 목(mock) 데이터로 동작 — 실제 백엔드(`api/`)·배치 워커(`worker/`)·
   외부 데이터 연동은 미착수. SRS의 8개 P1 기능 영역(인증~관리자) 화면이 모두 최소 목업으로 구현됨
-- Git 저장소 초기화 및 첫 커밋/푸시 —
-  [github.com/jeonwoobin-hue/trend_keyword](https://github.com/jeonwoobin-hue/trend_keyword) `main`
-  브랜치로 전체 코드베이스 최초 반영
 
 ## 2026-08-10
 

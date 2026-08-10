@@ -48,6 +48,8 @@ class Report(BaseModel):
     word_cloud: list[WordCloudItem] = Field(alias="wordCloud")
     network_graph: NetworkGraph = Field(alias="networkGraph")
     recommended_keywords: list[str] = Field(alias="recommendedKeywords")
+    # 공식 응답 계약에는 없는 필드. 유사 관심사 그룹 비교 추천(FR-REPORT-005)을 위한 목 전용 필드.
+    similar_group_keywords: list[str] = Field(default_factory=list, alias="similarGroupKeywords")
     created_at: datetime = Field(alias="createdAt")
 
     model_config = {"populate_by_name": True}

@@ -18,7 +18,7 @@
 | 트렌드 대시보드 | DASH-001 | FR-DASH-001 핫 키워드, FR-DASH-002 언급량 시각화, FR-DASH-006 기간 필터 | 목업 구현 (`pages/3_트렌드_대시보드`) |
 | Spike Score | DASH-001/002, ADMIN-001 | FR-DASH-003 급상승 지수 산출(배치) | 화면 표시값만 목업(난수 생성) — 실제 산출식·배치 워커는 미착수 |
 | 키워드 상세 | DASH-002 | FR-DASH-004 검색량 추이·감성분석 조회 | 목업 구현 (`pages/4_키워드_상세`) — FR-DASH-005(연령/성별 가중치, P2)는 미착수 |
-| 인사이트 리포트 | REPORT-001, 002 | FR-REPORT-001 생성 요청, FR-REPORT-002 이슈 요약, FR-REPORT-003 연관성 지도 | 목업 구현 (`pages/7_인사이트_리포트`, `pages/10_리포트_상세`) — Word Cloud/Network Graph는 접근성을 위해 막대그래프·연관 쌍 표로 대체 표현. 저장/공유/PDF(FR-REPORT-004, P2)는 미착수 |
+| 인사이트 리포트 | REPORT-001, 002 | FR-REPORT-001 생성 요청, FR-REPORT-002 이슈 요약, FR-REPORT-003 연관성 지도, FR-REPORT-005 유사 관심사 비교 추천 | 목업 구현 (`pages/7_인사이트_리포트`, `pages/10_리포트_상세`) — Word Cloud/Network Graph는 접근성을 위해 막대그래프·연관 쌍 표로 대체 표현. 유사 관심사 비교 추천(FR-REPORT-005)은 고정 분야 매핑 기반 목 데이터([KPI_Definitions.md](KPI_Definitions.md) 참고). 저장/공유/PDF(FR-REPORT-004, P2)는 미착수 |
 | 급상승 알림 | ALERT-001, 002 | FR-ALERT-001 키워드 등록, FR-ALERT-002 임계치 설정, FR-ALERT-004 알림 히스토리 | 목업 구현 (`pages/5_급상승_알림`, `pages/11_알림함`, 세션 동안만 유지). FR-ALERT-002(임계치 설정, SRS는 P2로 분류)는 functional-spec의 FR-ALERT-001 등록 플로우에 포함돼 함께 구현됨. 실제 발송 배치 워커(FR-ALERT-003)가 없어 알림함은 등록 키워드 기준 이력을 시뮬레이션 |
 | 콘텐츠 큐레이션 | CURATE-001, 002 | FR-CURATE-001 관련 콘텐츠 큐레이션 | CURATE-001 목업 구현 (`pages/8_콘텐츠_큐레이션`, 커서 기반 "더 보기") — 플랫폼 필터(FR-CURATE-002, P2)·스크랩(FR-CURATE-003, P3)·CURATE-002 상세는 미착수 |
 | 프로필/마이페이지 | MY-001 | FR-PROFILE-001 프로필 조회, FR-PROFILE-002 관심사 수정 | 목업 구현 (`pages/6_마이페이지`) |
@@ -37,7 +37,7 @@
   IA상 비로그인 사용자도 열람 가능(`G/U`)해 가드를 적용하지 않았습니다.
 - `services/`의 `dashboard_service.py`, `alert_service.py`, `profile_service.py`, `auth_service.py`,
   `report_service.py`, `curation_service.py`, `admin_service.py` 7개 모듈은 `tests/services/`에
-  pytest 65건으로 커버되어 있습니다(`python -m pytest -q`).
+  pytest 67건으로 커버되어 있습니다(`python -m pytest -q`).
 - 이 저장소는 [github.com/jeonwoobin-hue/trend_keyword](https://github.com/jeonwoobin-hue/trend_keyword)에
   `main` 브랜치로 푸시되어 있습니다.
 - 각 서비스 모듈은 실제 연동 시 내부 구현만 교체하고 함수 시그니처/반환 타입은 유지하도록

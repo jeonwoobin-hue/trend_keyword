@@ -1,8 +1,12 @@
-"""인사이트 리포트 생성 도메인 로직 (functional-spec FR-REPORT-001/002/003).
+"""인사이트 리포트 생성 도메인 로직 (functional-spec FR-REPORT-001/002/003, SRS FR-REPORT-005).
 
 실제 이슈 요약(AI)·Word Cloud·Network Graph 산출 로직이 붙기 전까지, 이 모듈은
 `dashboard_service`의 키워드 데이터를 재사용해 목(mock) 리포트를 생성한다. 실제 연동 시
 `generate_report()` 내부만 교체하고 시그니처/반환 타입(`Report`)은 유지한다.
+
+유사 관심사 비교 추천(FR-REPORT-005)은 실제 사용자 행동 기반 유사도 클러스터링 전까지,
+`config.SIMILAR_CATEGORIES`의 고정 매핑으로 "유사 분야"를 정의한다. 산정 방법은
+docs/KPI_Definitions.md와 일치시킬 것.
 """
 
 import random
@@ -14,6 +18,8 @@ from config.constants import (
     MAX_REPORT_TITLE_LENGTH,
     NETWORK_GRAPH_NODE_TOP_N,
     REPORT_RECOMMENDED_KEYWORDS_TOP_N,
+    SIMILAR_CATEGORIES,
+    SIMILAR_GROUP_KEYWORDS_TOP_N,
     WORD_CLOUD_TOP_N,
 )
 from models.dashboard import TrendKeyword
@@ -57,8 +63,21 @@ def generate_report(category: str, period: str, title: str | None) -> Report:
         word_cloud=_build_word_cloud(keywords),
         network_graph=_build_network_graph(keywords),
         recommended_keywords=[k.keyword for k in keywords[:REPORT_RECOMMENDED_KEYWORDS_TOP_N]],
+        similar_group_keywords=_build_similar_group_keywords(category, period),
         created_at=datetime.now(timezone.utc),
     )
+
+
+def _build_similar_group_keywords(category: str, period: str) -> list[str]:
+    """유사 분야 그룹(SIMILAR_CATEGORIES)의 Spike Score 상위 키워드를 추가 추천으로 산출한다."""
+    similar_categories = SIMILAR_CATEGORIES.get(category, [])
+    candidates = [
+        keyword
+        for similar_category in similar_categories
+        for keyword in get_dashboard_keywords(category=similar_category, period=period).keywords
+    ]
+    candidates.sort(key=lambda item: item.spike_score, reverse=True)
+    return [item.keyword for item in candidates[:SIMILAR_GROUP_KEYWORDS_TOP_N]]
 
 
 def get_report_by_id(reports: list[Report], report_id: str) -> Report | None:

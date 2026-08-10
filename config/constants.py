@@ -165,6 +165,18 @@ WORD_CLOUD_TOP_N = 15
 NETWORK_GRAPH_NODE_TOP_N = 8
 REPORT_RECOMMENDED_KEYWORDS_TOP_N = 5
 
+# --- 유사 관심사 비교 추천(REPORT-002) 정책 (SRS FR-REPORT-005) ---
+# 실제 사용자 행동 기반 유사도 클러스터링 전까지, 고정 매핑으로 "유사 분야"를 정의한다.
+# 산정 방법은 docs/KPI_Definitions.md "유사 관심사 비교 추천 키워드" 항목과 일치시킬 것.
+SIMILAR_CATEGORIES: dict[str, list[str]] = {
+    "fashion": ["beauty", "travel"],
+    "beauty": ["fashion", "travel"],
+    "travel": ["fashion", "beauty"],
+    "it_tech": ["finance"],
+    "finance": ["it_tech"],
+}
+SIMILAR_GROUP_KEYWORDS_TOP_N = 5
+
 # --- 콘텐츠 큐레이션(CURATE-001) 정책 (functional-spec FR-CURATE-001) ---
 CURATION_PAGE_SIZE = 10  # 커서 1회 요청당 반환 개수
 CURATION_TOTAL_MOCK_ITEMS = 37  # "더 보기"가 끝나는 지점을 보여주기 위한 임의의 목 데이터 총량
