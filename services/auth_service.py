@@ -132,6 +132,20 @@ def reset_password(new_password: str, new_password_confirm: str) -> None:
         raise AuthError("VALID_002", "비밀번호가 일치하지 않습니다.")
 
 
+def change_password(current_password: str, new_password: str, new_password_confirm: str) -> None:
+    """로그인한 상태에서 비밀번호를 변경한다 (MY-002 계정 설정, FR-PROFILE-002 계정 정보 수정).
+
+    실제 계정 저장소가 없어 현재 비밀번호는 대조하지 않고 미입력 여부만 확인한다. 새 비밀번호
+    검증 규칙은 `reset_password()`와 동일하다.
+
+    Raises:
+        AuthError: 현재 비밀번호 미입력, 새 비밀번호 길이 미달, 확인값 불일치 시.
+    """
+    if not current_password:
+        raise AuthError("VALID_001", "현재 비밀번호를 입력해주세요.")
+    reset_password(new_password, new_password_confirm)
+
+
 def login_with_social_provider(provider: str) -> AuthUser:
     """소셜 로그인(FR-AUTH-002)을 시뮬레이션한다.
 

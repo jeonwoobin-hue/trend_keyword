@@ -83,6 +83,12 @@ class WidgetKeys:
     CURATION_PLATFORM_MULTISELECT = "curation_platform_multiselect"
     ACCOUNT_NOTIFY_CHANNEL_MULTISELECT = "account_notify_channel_multiselect"
     ACCOUNT_DELETE_CONFIRM_CHECKBOX = "account_delete_confirm_checkbox"
+    ACCOUNT_DISPLAY_NAME_INPUT = "account_display_name_input"
+    ACCOUNT_PASSWORD_FORM = "account_password_form"
+    ACCOUNT_CURRENT_PASSWORD_INPUT = "account_current_password_input"
+    ACCOUNT_NEW_PASSWORD_INPUT = "account_new_password_input"
+    ACCOUNT_NEW_PASSWORD_CONFIRM_INPUT = "account_new_password_confirm_input"
+    ACCOUNT_DEFAULT_PERIOD_SELECT = "account_default_period_select"
 
 
 # --- 관심 분야 (SRS FR-ONBOARD-001 / functional-spec ONBOARD-001과 동일 목록 재사용) ---

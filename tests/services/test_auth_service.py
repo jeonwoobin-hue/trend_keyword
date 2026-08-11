@@ -5,6 +5,7 @@ import pytest
 from config.constants import ADMIN_EMAILS, MIN_PASSWORD_LENGTH, SIGNUP_VERIFICATION_CODE_LENGTH, UserRole
 from services.auth_service import (
     AuthError,
+    change_password,
     complete_signup,
     is_verification_code_valid,
     login,
@@ -140,6 +141,30 @@ def test_reset_password_too_short_raises_valid_002():
 def test_reset_password_mismatch_raises_valid_002():
     with pytest.raises(AuthError) as exc_info:
         reset_password("newpassword123", "different123")
+    assert exc_info.value.code == "VALID_002"
+
+
+def test_change_password_success_returns_none():
+    assert change_password("oldpassword123", "newpassword123", "newpassword123") is None
+
+
+def test_change_password_missing_current_raises_valid_001():
+    with pytest.raises(AuthError) as exc_info:
+        change_password("", "newpassword123", "newpassword123")
+    assert exc_info.value.code == "VALID_001"
+
+
+def test_change_password_new_password_too_short_raises_valid_002():
+    short_password = "a" * (MIN_PASSWORD_LENGTH - 1)
+
+    with pytest.raises(AuthError) as exc_info:
+        change_password("oldpassword123", short_password, short_password)
+    assert exc_info.value.code == "VALID_002"
+
+
+def test_change_password_mismatch_raises_valid_002():
+    with pytest.raises(AuthError) as exc_info:
+        change_password("oldpassword123", "newpassword123", "different123")
     assert exc_info.value.code == "VALID_002"
 
 
