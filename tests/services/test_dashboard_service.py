@@ -10,7 +10,7 @@ from config.constants import (
     DEMOGRAPHIC_GENDERS,
     RELATED_KEYWORDS_TOP_N,
 )
-from services.dashboard_service import get_dashboard_keywords, get_keyword_detail
+from services.dashboard_service import find_keyword_id_by_name, get_dashboard_keywords, get_keyword_detail
 
 PERIODS = ["24h", "1w", "1m"]
 
@@ -98,3 +98,14 @@ def test_get_keyword_detail_demographic_weights_cover_all_groups_and_sum_to_one(
     assert set(detail.demographics.gender_weights) == expected_genders
     assert sum(detail.demographics.age_group_weights.values()) == pytest.approx(1.0, abs=0.01)
     assert sum(detail.demographics.gender_weights.values()) == pytest.approx(1.0, abs=0.01)
+
+
+def test_find_keyword_id_by_name_returns_matching_id():
+    dashboard = get_dashboard_keywords(category="fashion", period="1w")
+    keyword = dashboard.keywords[0]
+
+    assert find_keyword_id_by_name(keyword.keyword) == keyword.keyword_id
+
+
+def test_find_keyword_id_by_name_unknown_name_returns_none():
+    assert find_keyword_id_by_name("존재하지_않는_키워드_xyz") is None

@@ -237,6 +237,19 @@ def get_keyword_detail(keyword_id: str, period: str) -> KeywordDetail | None:
     return None
 
 
+def find_keyword_id_by_name(keyword: str) -> str | None:
+    """키워드 이름으로 `keyword_id`를 찾는다 (ALERT-002 알림 상세 이동).
+
+    급상승 알림 키워드(`AlertRule.keyword`)는 자유 입력 텍스트라 목 키워드 풀에 없을 수도
+    있다 — 그 경우 `None`을 반환하고 호출부가 "상세 정보 없음"으로 처리한다.
+    """
+    for pool in _MOCK_KEYWORD_POOLS.values():
+        for candidate_id, name in pool:
+            if name == keyword:
+                return candidate_id
+    return None
+
+
 def _build_mock_keywords(category: str, period: str) -> list[TrendKeyword]:
     """카테고리·기간 조합마다 안정적인(재실행해도 동일한) 목 데이터를 생성한다."""
     rng = random.Random(f"{category}:{period}")

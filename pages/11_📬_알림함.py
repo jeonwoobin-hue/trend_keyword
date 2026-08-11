@@ -7,6 +7,7 @@ from app.session import init_session_state
 from components.top_nav import render_top_nav
 from config.constants import SessionKeys
 from services.alert_service import generate_alert_history
+from services.dashboard_service import find_keyword_id_by_name
 
 st.set_page_config(page_title="알림함 - TrendFit", page_icon="📬", layout="wide")
 init_session_state()
@@ -46,7 +47,7 @@ if not history:
 else:
     for entry in history:
         with st.container(border=True):
-            info_col, status_col, read_col = st.columns([3, 1, 1])
+            info_col, status_col, detail_col, read_col = st.columns([3, 1, 2, 1])
             with info_col:
                 title = f"**{entry.keyword}**" if entry.is_read else f"**🔵 {entry.keyword}**"
                 st.markdown(title)
@@ -56,6 +57,19 @@ else:
                     st.badge("발송 실패", color="red")
                 else:
                     st.badge("발송 완료", color="green")
+            with detail_col:
+                keyword_id = find_keyword_id_by_name(entry.keyword)
+                if keyword_id is None:
+                    st.button(
+                        "키워드 상세 보기",
+                        key=f"detail_{entry.alert_history_id}",
+                        disabled=True,
+                        use_container_width=True,
+                        help="목 데이터에 없는 키워드라 상세 정보를 표시할 수 없습니다.",
+                    )
+                elif st.button("키워드 상세 보기", key=f"detail_{entry.alert_history_id}", use_container_width=True):
+                    st.session_state[SessionKeys.SELECTED_KEYWORD_ID] = keyword_id
+                    st.switch_page("pages/4_🔍_키워드_상세.py")
             with read_col:
                 if not entry.is_read:
                     if st.button("읽음 처리", key=f"read_{entry.alert_history_id}", use_container_width=True):
