@@ -11,15 +11,12 @@ st.set_page_config(page_title="비밀번호 재설정 - TrendFit", page_icon="�
 init_session_state()
 render_top_nav(current_group="mypage")
 
-_STEP_KEY = "reset_step"  # "email" | "verify" | "new_password" | "done"
+_STEP_KEY = "reset_step"  # "email" | "verify" | "done"
 _PENDING_EMAIL_KEY = "reset_pending_email"
-_VERIFICATION_CODE_KEY = "reset_verification_code"
+_PENDING_CODE_KEY = "reset_pending_code"
 
 st.title("🔓 비밀번호 재설정")
-st.caption(
-    "실제 계정 저장소 연동 전 단계로, 이메일 인증 → 새 비밀번호 설정 절차만 시연합니다 "
-    "(입력한 새 비밀번호는 실제로 저장되지 않습니다)."
-)
+st.caption("가입한 이메일로 인증번호를 받아 확인한 뒤 새 비밀번호를 설정합니다.")
 
 step = st.session_state.get(_STEP_KEY, "email")
 
@@ -30,11 +27,12 @@ if step == "done":
         st.switch_page("pages/0_🔑_로그인.py")
     st.stop()
 
-if step == "new_password":
+if step == "verify":
     pending_email = st.session_state[_PENDING_EMAIL_KEY]
-    st.caption(f"{pending_email} 인증이 완료되었습니다. 새 비밀번호를 입력해주세요.")
+    st.success(f"{pending_email}로 인증번호를 보냈습니다. 이메일을 확인해주세요.")
 
-    with st.form(key=WidgetKeys.RESET_PASSWORD_FORM):
+    with st.form(key=WidgetKeys.RESET_CODE_FORM):
+        code_value = st.text_input("인증번호", key=WidgetKeys.RESET_CODE_INPUT)
         new_password = st.text_input(
             "새 비밀번호", type="password", key=WidgetKeys.RESET_NEW_PASSWORD_INPUT
         )
@@ -45,32 +43,18 @@ if step == "new_password":
 
     if password_submitted:
         try:
-            reset_password(new_password, new_password_confirm)
+            reset_password(pending_email, code_value, new_password, new_password_confirm)
         except AuthError as error:
             st.error(error.message)
         else:
             st.session_state[_STEP_KEY] = "done"
             st.session_state.pop(_PENDING_EMAIL_KEY, None)
-            st.session_state.pop(_VERIFICATION_CODE_KEY, None)
+            st.session_state.pop(_PENDING_CODE_KEY, None)
             st.rerun()
 
-elif step == "verify":
-    pending_email = st.session_state[_PENDING_EMAIL_KEY]
-    verification_code = st.session_state[_VERIFICATION_CODE_KEY]
-
-    st.success(f"{pending_email}로 인증번호를 보냈습니다.")
-    st.caption(f"실제 이메일 발송 연동 전 단계로, 인증번호를 화면에 표시합니다: **{verification_code}**")
-
-    with st.form(key=WidgetKeys.RESET_CODE_FORM):
-        code_value = st.text_input("인증번호", key=WidgetKeys.RESET_CODE_INPUT)
-        verify_submitted = st.form_submit_button("인증 확인", type="primary", use_container_width=True)
-
-    if verify_submitted:
-        if code_value.strip() == verification_code:
-            st.session_state[_STEP_KEY] = "new_password"
-            st.rerun()
-        else:
-            st.error("인증번호가 일치하지 않습니다.")
+    if st.button("이메일 다시 입력하기"):
+        st.session_state[_STEP_KEY] = "email"
+        st.rerun()
 
 else:
     st.markdown("#### 이메일 인증")
@@ -80,12 +64,11 @@ else:
 
     if email_submitted:
         try:
-            verification_code = request_password_reset(email_value)
+            request_password_reset(email_value)
         except AuthError as error:
             st.error(error.message)
         else:
             st.session_state[_PENDING_EMAIL_KEY] = email_value.strip()
-            st.session_state[_VERIFICATION_CODE_KEY] = verification_code
             st.session_state[_STEP_KEY] = "verify"
             st.rerun()
 

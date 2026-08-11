@@ -26,6 +26,10 @@ project/
 ├── outputs/            # 분석 스크립트가 생성하는 산출물 (차트, 중간 결과 등)
 ├── reports/            # 내부 분석용, 사람이 읽는 보고서 (사용자向 "인사이트 리포트"와는 별개 — §3 참고)
 ├── .streamlit/         # Streamlit 설정 (config.toml, secrets.toml — secrets는 git 제외)
+├── supabase/
+│   └── migrations/     # DB 마이그레이션 SQL (Supabase CLI 없이 SQL Editor에서 순서대로 직접 실행,
+│                        # 파일명 번호 순서 = 실행 순서). blog_dashboard_data 프로젝트를 블로그와
+│                        # 공유하므로 전부 trendfit 스키마 안에서만 생성/변경한다
 ├── docs/               # 개발 규칙 문서
 ├── product/            # 서비스 개선 관리
 ├── ops/                # 운영 관리

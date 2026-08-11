@@ -24,6 +24,7 @@ class SessionKeys:
     ALERT_HISTORY = "alert_history"
     ONBOARDING_PREVIEW_KEYWORDS = "onboarding_preview_keywords"
     AUTH_USER = "auth_user"
+    AUTH_SESSION = "auth_session"
     ONBOARD_EDIT_MODE = "onboard_edit_mode"
     REPORTS = "reports"
     SELECTED_REPORT_ID = "selected_report_id"
@@ -77,7 +78,6 @@ class WidgetKeys:
     RESET_EMAIL_INPUT = "reset_email_input"
     RESET_CODE_FORM = "reset_code_form"
     RESET_CODE_INPUT = "reset_code_input"
-    RESET_PASSWORD_FORM = "reset_password_form"
     RESET_NEW_PASSWORD_INPUT = "reset_new_password_input"
     RESET_NEW_PASSWORD_CONFIRM_INPUT = "reset_new_password_confirm_input"
     CURATION_PLATFORM_MULTISELECT = "curation_platform_multiselect"
@@ -215,10 +215,6 @@ ADMIN_EMAILS = [
     "admin@trendfit.com",
 ]
 
-# --- 회원가입(COM-003) 정책 (SRS FR-AUTH-003) ---
-# 실제 이메일 발송(SMTP) 연동 전까지 인증번호를 화면에 직접 노출하는 목(mock) 인증이다.
-SIGNUP_VERIFICATION_CODE_LENGTH = 6
-
 # --- 소셜 로그인(COM-002) 정책 (SRS FR-AUTH-002, P2) ---
 # 실제 OAuth 연동 전까지 버튼 클릭 시 즉시 로그인 처리하는 목(mock)이다.
 SOCIAL_PROVIDERS = [
@@ -293,3 +289,8 @@ ADMIN_MOCK_USER_COUNT = 8
 ADMIN_MOCK_REPORT_COUNT = 4
 ADMIN_KEYWORD_STAT_TOP_N = 6
 MAX_BLACKLIST_KEYWORD_LENGTH = 50
+
+# --- Supabase 연동 (ops/Deployment.md, product/CHANGELOG.md 2026-08-12) ---
+# 무료 플랜 프로젝트 한도(조직당 2개)로 인해 전용 프로젝트 대신 블로그 프로젝트를 공유하고,
+# TrendFit 데이터는 이 스키마 아래로 격리한다.
+SUPABASE_SCHEMA = "trendfit"

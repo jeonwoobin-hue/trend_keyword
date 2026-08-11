@@ -9,13 +9,14 @@ import streamlit as st
 from app.session import clear_user_data, init_session_state
 from config.constants import SessionKeys
 from models.alert import AlertRule
-from models.auth import AuthUser
+from models.auth import AuthSession, AuthUser
 
 
 def _seed_logged_in_user_with_data() -> None:
     init_session_state()
     st.session_state[SessionKeys.IS_AUTHENTICATED] = True
-    st.session_state[SessionKeys.AUTH_USER] = AuthUser(email="test@example.com", display_name="test")
+    st.session_state[SessionKeys.AUTH_USER] = AuthUser(id="user_1", email="test@example.com", display_name="test")
+    st.session_state[SessionKeys.AUTH_SESSION] = AuthSession(access_token="access", refresh_token="refresh")
     st.session_state[SessionKeys.ALERT_RULES] = [
         AlertRule(
             alert_id="alert_1",
@@ -36,6 +37,7 @@ def test_clear_user_data_resets_authentication_and_personal_data():
 
     assert st.session_state[SessionKeys.IS_AUTHENTICATED] is False
     assert st.session_state[SessionKeys.AUTH_USER] is None
+    assert st.session_state[SessionKeys.AUTH_SESSION] is None
     assert st.session_state[SessionKeys.ALERT_RULES] == []
     assert st.session_state[SessionKeys.REPORTS] == []
 

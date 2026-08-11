@@ -1,6 +1,7 @@
 """MY-001 마이페이지. 프로필 정보, 등록된 알림 키워드 조회 및 관심사 수정/로그아웃."""
 
 import streamlit as st
+from supabase_auth.errors import AuthApiError
 
 from app.auth_guard import require_login
 from app.session import init_session_state
@@ -13,6 +14,7 @@ from config.constants import (
     SessionKeys,
 )
 from services.curation_service import remove_scrap
+from services.supabase_client import create_supabase_client
 
 st.set_page_config(page_title="마이페이지 - TrendFit", page_icon="🙋", layout="wide")
 init_session_state()
@@ -93,6 +95,13 @@ with account_col:
         st.switch_page("pages/14_⚙️_계정_설정.py")
 with logout_col:
     if st.button("로그아웃", type="primary", use_container_width=True):
+        auth_session = st.session_state[SessionKeys.AUTH_SESSION]
+        if auth_session is not None:
+            try:
+                create_supabase_client(access_token=auth_session.access_token).auth.sign_out()
+            except AuthApiError:
+                pass  # 서버 쪽 세션 무효화가 실패해도 로컬 로그아웃은 계속 진행한다.
         st.session_state[SessionKeys.IS_AUTHENTICATED] = False
         st.session_state[SessionKeys.AUTH_USER] = None
+        st.session_state[SessionKeys.AUTH_SESSION] = None
         st.switch_page("Home.py")

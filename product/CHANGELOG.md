@@ -2,6 +2,86 @@
 
 날짜순으로 기록합니다 (최신이 위).
 
+## 2026-08-12 (3)
+
+- 회원 탈퇴(MY-002, FR-PROFILE-004) 시 Supabase의 실제 계정 삭제까지 마무리. `services/auth_service.
+  delete_account()`가 `service_role` Admin API(`auth.admin.delete_user`)로 `auth.users` 계정을
+  삭제하면 `trendfit.profiles`는 외래키 `on delete cascade`로 함께 삭제된다(`pages/14_계정_설정`).
+  소셜 로그인(P2, 실제 Supabase 계정이 없는 목업 경로)은 기존처럼 로컬 세션만 초기화.
+- **실제 계정으로 검증**: Admin API로 이메일 인증까지 끝난 테스트 계정을 직접 만들고
+  `trendfit.profiles` 행도 넣은 뒤 `delete_account()`를 호출 — profiles 행이 cascade로 사라지고,
+  `auth.users`에서도 계정이 실제로 삭제된 것(`get_user_by_id`가 "User not found")까지 확인.
+  이메일 인증 플로우 없이 관리자 API만으로 만든 자체 완결형 테스트라 실제 이메일이 필요 없었음.
+- `tests/services/test_auth_service.py`에 `delete_account` 성공/실패 케이스 추가. 전체 테스트
+  106건 통과.
+
+## 2026-08-12 (2)
+
+- `services/auth_service.py`의 목(mock) 로그인/회원가입/비밀번호 재설정/변경 로직을 Supabase Auth +
+  `trendfit.profiles` 실제 연동으로 교체(로그인 FR-AUTH-001, 회원가입 FR-AUTH-003, 비밀번호 재설정
+  FR-AUTH-004, 계정 설정의 비밀번호 변경·표시 이름 수정 MY-002). 이메일 인증/비밀번호 재설정은
+  화면에 코드를 노출하던 목업 대신 Supabase의 이메일 OTP(6자리 코드)로 실제 발송된다 — 배포 전
+  Supabase 대시보드에서 Email Templates를 코드 방식(`{{ .Token }}`)으로 설정해야 동작함
+  ([ops/Deployment.md](../ops/Deployment.md) 참고).
+- **버그 픽스(구현 중 발견)**: `services/supabase_client.py`의 anon 클라이언트를 프로세스 전역
+  싱글턴(`lru_cache`)으로 캐싱하고 있었는데, Streamlit은 여러 브라우저 세션이 한 프로세스를
+  공유하므로 로그인 세션(JWT)을 그 싱글턴에 실으면 사용자 간에 세션이 섞일 수 있는 구조적 결함이
+  있었다. 아직 실제 로그인 코드가 없어 문제가 드러나기 전에 발견 — 로그인 연동을 시작하며
+  `get_supabase_client()`(캐시된 싱글턴)를 제거하고, 인증이 관여하는 호출마다 새 클라이언트를
+  만드는 `create_supabase_client(access_token=None)`으로 교체했다. `service_role` 클라이언트는
+  사용자 세션을 들고 있지 않아 싱글턴으로 유지해도 안전해 그대로 둠.
+- `models/auth.py`: `AuthUser`에 `id`(uuid) 추가, 세션 토큰 전용 `AuthSession` 모델 추가.
+  `config/constants.py`에 `SessionKeys.AUTH_SESSION` 추가(로그아웃/회원 탈퇴 시 함께 초기화).
+- 회원가입/비밀번호 재설정 화면(`pages/1_회원가입`, `pages/13_비밀번호_재설정`)의 흐름을 실제 OTP에
+  맞게 조정 — 더 이상 인증번호를 화면에 노출하지 않고, 비밀번호 재설정은 "코드 확인"과 "새 비밀번호
+  저장"을 한 단계로 합침(Supabase의 recovery OTP는 한 번 검증하면 세션으로 소비되어, 확인 단계를
+  분리하면 코드를 두 번 써야 하는 문제가 있었음).
+- 남은 목업: 소셜 로그인(FR-AUTH-002, P2, OAuth 프로바이더 설정 필요)과 회원 탈퇴 시 실제
+  Supabase 계정 삭제(FR-PROFILE-004, 현재는 로컬 세션만 초기화) — 별도 작업으로 진행 예정.
+- `tests/services/test_auth_service.py`를 Supabase 클라이언트를 가짜로 대체(monkeypatch)하는
+  방식으로 전면 재작성, `tests/app/test_session.py`도 `AuthUser.id` 필수화에 맞춰 갱신.
+- **실제 앱으로 검증**: `streamlit run Home.py`를 띄워 로그인 화면에서 존재하지 않는 계정으로
+  로그인을 시도해 실제 Supabase Auth 호출까지 왕복하고 정확한 에러 메시지가 뜨는 것을 확인. 회원가입
+  화면은 브라우저 자동화로 약관 동의 체크박스를 제어하기 어려워, 대신 `request_signup_verification()`을
+  직접 호출해 실제 Supabase에 왕복시켜 검증.
+  - 그 과정에서 **버그 발견 및 수정**: Supabase가 `example.com`처럼 형식은 맞지만 실제로 받을 수
+    없다고 판단하는 이메일을 `email_address_invalid`로 거부하는데, `request_signup_verification()`이
+    모든 Supabase 에러를 "이미 가입된 이메일"(VALID_003)로 뭉뚱그려 잘못된 메시지를 보여주고
+    있었다. Supabase 에러 코드별로 분기(`email_address_invalid` → VALID_002, `user_already_exists`
+    → VALID_003, 그 외 → SERVER_005)하도록 수정하고 테스트 2건 추가.
+  - 전체 테스트 104건 통과.
+
+## 2026-08-12
+
+- Supabase 연결 계층 착수(1단계 "DB+실제 인증"의 첫 조각). 원래 계획은 TrendFit 전용 프로젝트
+  생성이었으나, 무료 플랜의 조직당 활성 프로젝트 한도(2개)에 이미 도달해 있어 블로그 프로젝트를
+  공유하고 `trendfit` 스키마로 데이터를 격리하는 방식으로 변경(사용자 결정, 다른 프로젝트에
+  영향 없음 확인).
+  - `config/secrets.py`: `.streamlit/secrets.toml` 로더 — `api/`·`worker/`가 Streamlit 런타임
+    밖에서도 동일하게 시크릿을 읽을 수 있도록 `st.secrets` 대신 파일을 직접 파싱
+  - `services/supabase_client.py`: anon/service_role 키 기반 클라이언트 팩토리(`get_supabase_client`,
+    `get_supabase_admin_client`), 모든 조회는 `trendfit` 스키마로 제한
+  - `config/constants.py`에 `SUPABASE_SCHEMA` 추가, `requirements.txt`에 `supabase==2.31.0` 추가
+  - `.streamlit/secrets.toml.example` 추가(실값은 git 제외, 로컬에서 복사해 채우는 방식)
+  - Supabase 대시보드에서 `trendfit` 스키마 생성 + Settings → Data API의 Exposed schemas에 추가
+    완료. REST API로 anon/service_role key 왕복 테스트 통과(`PGRST205` — 존재하지 않는 테이블을
+    조회했을 때 나오는 정상 응답까지 확인. 이전엔 `PGRST106 Invalid schema`로 실패했었음)
+  - `trendfit.profiles` 테이블 설계(`supabase/migrations/0001_create_profiles.sql`) — Supabase
+    Auth(`auth.users`)에 인증(비밀번호 해시·이메일 인증·JWT 발급)을 위임하고, TrendFit 전용 필드
+    (표시 이름·역할·알림 기본값)만 담는 1:1 확장 테이블로 설계
+  - **`auth.users`에는 트리거를 달지 않기로 결정**: `auth.users`는 블로그 프로젝트와 공유하는
+    테이블이라, 트리거를 달면 앱 구분 없이 모든 회원가입(블로그 포함)에 실행되어 블로그 가입
+    흐름에까지 영향을 준다. 대신 TrendFit 회원가입 완료 시 서비스 코드가 `trendfit.profiles`에
+    명시적으로 행을 insert하는 방식으로 설계(사용자 결정, 2026-08-12)
+  - `0001_create_profiles.sql` 실행 후 REST API로 조회하니 `42501 permission denied for schema
+    trendfit` — Supabase는 새 스키마 생성 시 `anon`/`authenticated`/`service_role` 역할에 기본
+    권한을 주지 않는다는 걸 확인. `supabase/migrations/0002_grant_trendfit_privileges.sql`로
+    schema usage + 테이블 권한 + 향후 테이블에도 자동 적용되는 default privileges까지 부여
+  - 두 마이그레이션(0001, 0002) 모두 SQL Editor에서 실행 완료. anon/service_role key 양쪽으로
+    `trendfit.profiles` 조회 정상 동작(`200 []`, RLS 적용 상태로 빈 결과) 확인
+  - 다음 단계: `auth_service.py` 등 목(mock) 로직을 실제 Supabase Auth 연동으로 교체 — 별도
+    작업으로 진행 예정
+
 ## 2026-08-11
 
 - `Home.py` Streamlit 진입점 및 랜딩(COM-001) 구현

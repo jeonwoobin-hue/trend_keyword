@@ -28,8 +28,6 @@ if st.session_state[SessionKeys.IS_AUTHENTICATED]:
         st.switch_page(_next_page_after_login())
     st.stop()
 
-st.caption("실제 인증 백엔드 연동 전 단계로, 형식이 올바른 이메일·비밀번호(8자 이상)면 로그인됩니다.")
-
 with st.form(key=WidgetKeys.LOGIN_FORM):
     email_value = st.text_input("이메일", key=WidgetKeys.LOGIN_EMAIL_INPUT)
     password_value = st.text_input("비밀번호", type="password", key=WidgetKeys.LOGIN_PASSWORD_INPUT)
@@ -37,12 +35,13 @@ with st.form(key=WidgetKeys.LOGIN_FORM):
 
 if submitted:
     try:
-        auth_user = login(email_value, password_value)
+        auth_user, auth_session = login(email_value, password_value)
     except AuthError as error:
         st.error(error.message)
     else:
         st.session_state[SessionKeys.IS_AUTHENTICATED] = True
         st.session_state[SessionKeys.AUTH_USER] = auth_user
+        st.session_state[SessionKeys.AUTH_SESSION] = auth_session
         st.switch_page(_next_page_after_login())
 
 st.divider()

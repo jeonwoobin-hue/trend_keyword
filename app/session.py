@@ -16,6 +16,7 @@ def _default_session_values() -> dict:
         SessionKeys.ALERT_HISTORY: None,
         SessionKeys.ONBOARDING_PREVIEW_KEYWORDS: [],
         SessionKeys.AUTH_USER: None,
+        SessionKeys.AUTH_SESSION: None,
         SessionKeys.ONBOARD_EDIT_MODE: False,
         SessionKeys.REPORTS: [],
         SessionKeys.SELECTED_REPORT_ID: None,
@@ -38,6 +39,7 @@ def _default_session_values() -> dict:
 _USER_SCOPED_KEYS = [
     SessionKeys.IS_AUTHENTICATED,
     SessionKeys.AUTH_USER,
+    SessionKeys.AUTH_SESSION,
     SessionKeys.USER_PROFILE,
     SessionKeys.ONBOARDING_PREVIEW_KEYWORDS,
     SessionKeys.ONBOARD_EDIT_MODE,
