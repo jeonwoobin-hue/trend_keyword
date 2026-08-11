@@ -43,8 +43,9 @@
 
 - **정의**: 관심 분야와 유사한 분야 그룹의 데이터를 비교하여 도출한 추가 추천 키워드
 - **산정 방법(목 데이터 기준)**: `config/constants.py`의 `SIMILAR_CATEGORIES`에 정의된 고정
-  분야 매핑(패션↔뷰티↔여행, IT테크↔재테크)에서 Spike Score 상위 `SIMILAR_GROUP_KEYWORDS_TOP_N`개를
-  추천 (`services/report_service.py`의 `_build_similar_group_keywords`)
+  분야 매핑(예: 패션↔뷰티↔리빙, IT테크↔자동차↔경제/비즈니스, 방송/연예↔대중음악↔영화)에서
+  Spike Score 상위 `SIMILAR_GROUP_KEYWORDS_TOP_N`개를 추천 (`services/report_service.py`의
+  `_build_similar_group_keywords`)
 - **미정 사항**: 지금의 분야 매핑은 실제 사용자 행동 데이터 없이 임의로 정한 고정값이다. 실제
   유사도는 사용자 행동/코호트 데이터 기반 클러스터링으로 재계산해야 하며, 확정 시 이 항목과
   `config.SIMILAR_CATEGORIES`를 함께 갱신할 것

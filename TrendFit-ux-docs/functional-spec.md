@@ -1,7 +1,11 @@
 # TrendFit 기능 명세서
 
-문서 버전 v1.0 · 작성일 2026-08-08
-아래는 SRS(v1.0)의 P1 핵심 기능 8종에 대한 상세 명세다.
+문서 버전 v1.1 · 작성일 2026-08-08
+아래는 SRS(v1.1)의 P1 핵심 기능 8종에 대한 상세 명세다.
+
+> **v1.1 변경 이력(2026-08-12)**: FR-ONBOARD-001 입력값 표의 `interests`(네이버 주제 필터 기준
+> 20개 확정 목록), `purpose`(`purchase` → `sales`), `platforms`(`naver_blog, youtube, instagram,
+> threads`로 축소·변경) 갱신. 상세 목록은 [srs.md](srs.md) v1.1 변경 이력 참고.
 
 ---
 
@@ -21,11 +25,11 @@
 ### 입력값
 | 파라미터 | 타입 | 필수 | 유효성 검사 |
 |----------|------|------|-------------|
-| interests | array[string] | Y | 사전 정의 분야(패션/IT테크/여행/재테크/뷰티 등) 중 1~5개 |
-| purpose | string | Y | enum: content_planning, purchase, market_research, casual |
+| interests | array[string] | Y | 사전 정의 분야(여행/패션/뷰티/푸드/IT테크/자동차/리빙/육아/생활건강/게임/동물·펫/운동·레저/프로스포츠/방송·연예/대중음악/영화/공연·전시·예술/도서/경제·비즈니스/어학·교육 20개) 중 1~5개 |
+| purpose | string | Y | enum: content_planning, sales, market_research, casual |
 | ageGroup | string | Y | enum: 10s, 20s, 30s, 40s, 50s, 60plus |
 | gender | string | N | enum: male, female, unspecified |
-| platforms | array[string] | Y | enum: youtube, instagram, news, x, gallery 중 1개 이상 |
+| platforms | array[string] | Y | enum: naver_blog, youtube, instagram, threads 중 1개 이상 |
 | period | string | Y | enum: 24h, 1w, 1m |
 
 ### 처리 로직
@@ -437,7 +441,7 @@ Response: { "success": true, "data": { "alerts": [{ "keyword": "...", "spikeScor
 | 파라미터 | 타입 | 필수 | 유효성 검사 |
 |----------|------|------|-------------|
 | keyword | string | N | 특정 키워드 경유 진입 시 |
-| platform | array[string] | N | enum: youtube, instagram, news, x (미지정 시 전체) |
+| platform | array[string] | N | enum: naver_blog, youtube, instagram, threads (미지정 시 전체, v1.1 변경) |
 | cursor | string | N | 페이징 커서 |
 
 ### 처리 로직

@@ -67,7 +67,7 @@ def test_get_curated_contents_platform_filter_restricts_results():
 
 def test_get_curated_contents_platform_filter_paginates_over_filtered_pool_only():
     keyword = "패션"
-    platforms = ["youtube", "news"]
+    platforms = ["youtube", "threads"]
     seen_ids: list[str] = []
     cursor = None
 

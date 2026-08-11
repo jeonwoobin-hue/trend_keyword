@@ -4,13 +4,15 @@ import streamlit as st
 
 from app.auth_guard import require_login
 from app.session import init_session_state
+from components.top_nav import render_top_nav
 from config.constants import CURATION_PLATFORMS, SessionKeys, WidgetKeys
 from services.curation_service import add_scrap, get_curated_contents, remove_scrap
 
 st.set_page_config(page_title="콘텐츠 큐레이션 - TrendFit", page_icon="🎬", layout="wide")
 init_session_state()
+render_top_nav(current_group="insight")
 
-_PLATFORM_ICONS = {"youtube": "▶️", "instagram": "📸", "news": "📰", "x": "✖️"}
+_PLATFORM_ICONS = {"naver_blog": "📝", "youtube": "▶️", "instagram": "📸", "threads": "🧵"}
 
 st.title("🎬 콘텐츠 큐레이션")
 st.caption("실제 외부 콘텐츠 연동 전 단계로, 카드에 표시되는 값은 샘플 데이터입니다.")

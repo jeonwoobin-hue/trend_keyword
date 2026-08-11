@@ -5,12 +5,14 @@ import streamlit as st
 
 from app.auth_guard import require_login
 from app.session import init_session_state
+from components.top_nav import render_top_nav
 from config.constants import CATEGORIES, PERIOD_OPTIONS, SessionKeys, SIMILAR_CATEGORIES
 from services.report_export_service import ReportExportError, build_report_pdf, build_share_link
 from services.report_service import get_report_by_id
 
 st.set_page_config(page_title="리포트 상세 - TrendFit", page_icon="🗺️", layout="wide")
 init_session_state()
+render_top_nav(current_group="insight")
 
 st.title("🗺️ 리포트 상세")
 require_login()

@@ -2,8 +2,9 @@
 
 import streamlit as st
 
-from app.auth_guard import require_login
+from app.auth_guard import require_admin
 from app.session import init_session_state
+from components.top_nav import render_top_nav
 from config.constants import MAX_BLACKLIST_KEYWORD_LENGTH, SessionKeys, WidgetKeys
 from services.admin_service import (
     BlacklistValidationError,
@@ -16,13 +17,10 @@ from services.admin_service import (
 
 st.set_page_config(page_title="사용자·키워드 관리 - TrendFit", page_icon="🗂️", layout="wide")
 init_session_state()
+render_top_nav(current_group="admin")
 
 st.title("🗂️ 사용자·키워드 관리")
-st.caption(
-    "관리자 전용 화면입니다. 현재는 로그인 여부만 확인하며, 역할(관리자/일반 사용자) 기반 "
-    "접근 제어는 아직 구현되어 있지 않습니다."
-)
-require_login()
+require_admin()
 st.caption("실제 다중 사용자 DB 연동 전 단계로, 사용자 목록·키워드 통계·신고 내역은 모두 샘플 데이터입니다.")
 
 if st.session_state[SessionKeys.ADMIN_USERS] is None:

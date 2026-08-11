@@ -4,6 +4,7 @@ import streamlit as st
 
 from app.auth_guard import require_login
 from app.session import init_session_state
+from components.top_nav import render_top_nav
 from config.constants import (
     DEFAULT_THRESHOLD_SCORE,
     MAX_ALERT_KEYWORD_LENGTH,
@@ -16,6 +17,7 @@ from services.alert_service import AlertValidationError, register_alert, remove_
 
 st.set_page_config(page_title="급상승 알림 설정 - TrendFit", page_icon="🔔", layout="wide")
 init_session_state()
+render_top_nav(current_group="trend")
 
 st.title("🔔 급상승 알림 설정")
 require_login()

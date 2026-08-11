@@ -4,6 +4,7 @@ import streamlit as st
 
 from app.auth_guard import require_login
 from app.session import init_session_state
+from components.top_nav import render_top_nav
 from config.constants import (
     CATEGORIES,
     CATEGORY_ALL,
@@ -17,6 +18,7 @@ from services.report_service import ReportValidationError, generate_report
 
 st.set_page_config(page_title="인사이트 리포트 - TrendFit", page_icon="📰", layout="wide")
 init_session_state()
+render_top_nav(current_group="insight")
 
 st.title("📰 인사이트 리포트")
 require_login()

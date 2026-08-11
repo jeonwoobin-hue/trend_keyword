@@ -2,20 +2,18 @@
 
 import streamlit as st
 
-from app.auth_guard import require_login
+from app.auth_guard import require_admin
 from app.session import init_session_state
+from components.top_nav import render_top_nav
 from config.constants import SessionKeys
 from services.admin_service import list_data_source_statuses, run_spike_batch_recalculation
 
 st.set_page_config(page_title="관리자 대시보드 - TrendFit", page_icon="🛠️", layout="wide")
 init_session_state()
+render_top_nav(current_group="admin")
 
 st.title("🛠️ 관리자 대시보드")
-st.caption(
-    "관리자 전용 화면입니다. 현재는 로그인 여부만 확인하며, 역할(관리자/일반 사용자) 기반 "
-    "접근 제어는 아직 구현되어 있지 않습니다."
-)
-require_login()
+require_admin()
 
 if st.button("🗂️ 사용자·키워드 관리"):
     st.switch_page("pages/12_🗂️_사용자_키워드_관리.py")

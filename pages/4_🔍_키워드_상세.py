@@ -5,6 +5,7 @@ import streamlit as st
 
 from app.auth_guard import require_login
 from app.session import init_session_state
+from components.top_nav import render_top_nav
 from config.constants import (
     AGE_GROUP_OPTIONS,
     CATEGORIES,
@@ -20,6 +21,7 @@ from services.dashboard_service import get_keyword_detail
 
 st.set_page_config(page_title="키워드 상세 - TrendFit", page_icon="🔍", layout="wide")
 init_session_state()
+render_top_nav(current_group="trend")
 
 
 @st.cache_data(ttl=DASHBOARD_CACHE_TTL_SECONDS)

@@ -3,11 +3,13 @@
 import streamlit as st
 
 from app.session import init_session_state
+from components.top_nav import render_top_nav
 from config.constants import WidgetKeys
 from services.auth_service import AuthError, request_password_reset, reset_password
 
 st.set_page_config(page_title="비밀번호 재설정 - TrendFit", page_icon="🔓", layout="wide")
 init_session_state()
+render_top_nav(current_group="mypage")
 
 _STEP_KEY = "reset_step"  # "email" | "verify" | "new_password" | "done"
 _PENDING_EMAIL_KEY = "reset_pending_email"

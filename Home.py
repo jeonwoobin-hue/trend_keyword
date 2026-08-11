@@ -6,6 +6,7 @@
 import streamlit as st
 
 from app.session import init_session_state
+from components.top_nav import render_top_nav
 from config.constants import (
     PAGE_ICON,
     PAGE_LAYOUT,
@@ -16,6 +17,7 @@ from config.constants import (
 
 st.set_page_config(page_title=PAGE_TITLE, page_icon=PAGE_ICON, layout=PAGE_LAYOUT)
 init_session_state()
+render_top_nav(current_group="home")
 
 st.title(f"{PAGE_ICON} {PAGE_TITLE}")
 st.subheader(SERVICE_TAGLINE)

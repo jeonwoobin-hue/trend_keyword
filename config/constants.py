@@ -85,14 +85,31 @@ class WidgetKeys:
 
 
 # --- 관심 분야 (SRS FR-ONBOARD-001 / functional-spec ONBOARD-001과 동일 목록 재사용) ---
+# 네이버 주제 필터 체계를 기준으로 확장(2026-08-12, 사용자 요청) — 원본 SRS는
+# "패션/IT테크/여행/재테크/뷰티 등"으로 예시만 들었을 뿐 확정 목록이 아니었음.
 CATEGORY_ALL = "all"
 CATEGORY_ALL_LABEL = "전체"
 CATEGORIES = [
-    ("fashion", "패션"),
-    ("it_tech", "IT테크"),
     ("travel", "여행"),
-    ("finance", "재테크"),
+    ("fashion", "패션"),
     ("beauty", "뷰티"),
+    ("food", "푸드"),
+    ("it_tech", "IT테크"),
+    ("car", "자동차"),
+    ("living", "리빙"),
+    ("parenting", "육아"),
+    ("health", "생활건강"),
+    ("game", "게임"),
+    ("pet", "동물/펫"),
+    ("sports_leisure", "운동/레저"),
+    ("pro_sports", "프로스포츠"),
+    ("entertainment", "방송/연예"),
+    ("music", "대중음악"),
+    ("movie", "영화"),
+    ("performing_arts", "공연/전시/예술"),
+    ("book", "도서"),
+    ("economy_business", "경제/비즈니스"),
+    ("education", "어학/교육"),
 ]
 
 # --- 대시보드 기간 필터 (functional-spec FR-DASH-001 / FR-DASH-006) ---
@@ -141,7 +158,7 @@ MAX_INTERESTS = 5
 
 PURPOSE_OPTIONS = [
     ("content_planning", "콘텐츠 기획"),
-    ("purchase", "상품 구매"),
+    ("sales", "상품 판매"),
     ("market_research", "시장 조사"),
     ("casual", "기분 전환"),
 ]
@@ -162,11 +179,10 @@ GENDER_OPTIONS = [
 ]
 
 PLATFORM_OPTIONS = [
+    ("naver_blog", "네이버 블로그"),
     ("youtube", "유튜브"),
     ("instagram", "인스타그램"),
-    ("news", "포털 뉴스"),
-    ("x", "X(트위터)"),
-    ("gallery", "커뮤니티/갤러리"),
+    ("threads", "쓰레드"),
 ]
 
 PREVIEW_KEYWORDS_TOP_N = 5  # functional-spec: 추천 키워드 상위 5개 사전 산출
@@ -175,6 +191,22 @@ PREVIEW_KEYWORDS_TOP_N = 5  # functional-spec: 추천 키워드 상위 5개 사�
 # SRS/functional-spec에 비밀번호 정책이 별도로 정의되어 있지 않아, 실제 인증 백엔드 연동 전까지
 # 임시로 최소 길이만 적용한다. 실제 연동 시 정책을 재검토할 것.
 MIN_PASSWORD_LENGTH = 8
+
+
+class UserRole:
+    """`AuthUser.role`에서 사용하는 값 (IA 접근권한 열 U=일반 사용자, A=관리자에 대응)."""
+
+    USER = "user"
+    ADMIN = "admin"
+
+
+# --- 역할(ADMIN) 판별 정책 ---
+# 실제 사용자 저장소·역할 관리 기능(functional-spec FR-ADMIN-002 범위 밖)이 붙기 전까지,
+# 이 화이트리스트에 등록된 이메일로 로그인하면 관리자(UserRole.ADMIN)로 간주하는 목(mock)이다.
+# 실제 운영 전환 시 DB의 역할 컬럼 조회로 교체하고 이 목록은 제거할 것.
+ADMIN_EMAILS = [
+    "admin@trendfit.com",
+]
 
 # --- 회원가입(COM-003) 정책 (SRS FR-AUTH-003) ---
 # 실제 이메일 발송(SMTP) 연동 전까지 인증번호를 화면에 직접 노출하는 목(mock) 인증이다.
@@ -197,11 +229,26 @@ REPORT_RECOMMENDED_KEYWORDS_TOP_N = 5
 # 실제 사용자 행동 기반 유사도 클러스터링 전까지, 고정 매핑으로 "유사 분야"를 정의한다.
 # 산정 방법은 docs/KPI_Definitions.md "유사 관심사 비교 추천 키워드" 항목과 일치시킬 것.
 SIMILAR_CATEGORIES: dict[str, list[str]] = {
-    "fashion": ["beauty", "travel"],
-    "beauty": ["fashion", "travel"],
-    "travel": ["fashion", "beauty"],
-    "it_tech": ["finance"],
-    "finance": ["it_tech"],
+    "travel": ["education", "living"],
+    "fashion": ["beauty", "living"],
+    "beauty": ["fashion", "food"],
+    "food": ["living", "beauty"],
+    "it_tech": ["car", "economy_business"],
+    "car": ["it_tech", "economy_business"],
+    "living": ["fashion", "food"],
+    "parenting": ["health", "pet"],
+    "health": ["parenting", "pet"],
+    "game": ["sports_leisure", "pro_sports"],
+    "pet": ["parenting", "health"],
+    "sports_leisure": ["pro_sports", "game"],
+    "pro_sports": ["sports_leisure", "game"],
+    "entertainment": ["music", "movie"],
+    "music": ["entertainment", "movie"],
+    "movie": ["entertainment", "performing_arts"],
+    "performing_arts": ["movie", "book"],
+    "book": ["performing_arts", "education"],
+    "economy_business": ["it_tech", "car"],
+    "education": ["book", "travel"],
 }
 SIMILAR_GROUP_KEYWORDS_TOP_N = 5
 
@@ -216,10 +263,10 @@ REPORT_SHARE_LINK_BASE_URL = "https://trendfit.app/reports"
 CURATION_PAGE_SIZE = 10  # 커서 1회 요청당 반환 개수
 CURATION_TOTAL_MOCK_ITEMS = 37  # "더 보기"가 끝나는 지점을 보여주기 위한 임의의 목 데이터 총량
 CURATION_PLATFORMS = [
+    ("naver_blog", "네이버 블로그"),
     ("youtube", "유튜브"),
     ("instagram", "인스타그램"),
-    ("news", "포털 뉴스"),
-    ("x", "X(트위터)"),
+    ("threads", "쓰레드"),
 ]
 
 # --- 관리자 대시보드(ADMIN-001) 정책 (SRS FR-ADMIN-001) ---

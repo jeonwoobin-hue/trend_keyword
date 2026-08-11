@@ -4,6 +4,7 @@ import streamlit as st
 
 from app.auth_guard import require_login
 from app.session import init_session_state
+from components.top_nav import render_top_nav
 from config.constants import (
     AGE_GROUP_OPTIONS,
     CATEGORIES,
@@ -19,6 +20,7 @@ from services.profile_service import ProfileValidationError, build_preview_keywo
 
 st.set_page_config(page_title="관심사 설정 - TrendFit", page_icon="📝", layout="wide")
 init_session_state()
+render_top_nav(current_group="mypage")
 
 st.title("📝 관심사·조건 설정")
 require_login()

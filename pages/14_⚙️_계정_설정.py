@@ -4,10 +4,12 @@ import streamlit as st
 
 from app.auth_guard import require_login
 from app.session import clear_user_data, init_session_state
+from components.top_nav import render_top_nav
 from config.constants import NOTIFY_CHANNELS, SessionKeys, WidgetKeys
 
 st.set_page_config(page_title="계정 설정 - TrendFit", page_icon="⚙️", layout="wide")
 init_session_state()
+render_top_nav(current_group="mypage")
 
 st.title("⚙️ 계정 설정")
 require_login()

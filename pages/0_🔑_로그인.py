@@ -3,11 +3,13 @@
 import streamlit as st
 
 from app.session import init_session_state
+from components.top_nav import render_top_nav
 from config.constants import SessionKeys, SOCIAL_PROVIDERS, WidgetKeys
 from services.auth_service import AuthError, login, login_with_social_provider
 
 st.set_page_config(page_title="로그인 - TrendFit", page_icon="🔑", layout="wide")
 init_session_state()
+render_top_nav()
 
 st.title("🔑 로그인")
 

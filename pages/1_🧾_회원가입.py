@@ -3,6 +3,7 @@
 import streamlit as st
 
 from app.session import init_session_state
+from components.top_nav import render_top_nav
 from config.constants import SessionKeys, WidgetKeys
 from services.auth_service import (
     AuthError,
@@ -13,6 +14,7 @@ from services.auth_service import (
 
 st.set_page_config(page_title="회원가입 - TrendFit", page_icon="🧾", layout="wide")
 init_session_state()
+render_top_nav()
 
 _STEP_KEY = "signup_step"  # "info" | "verify"
 _PENDING_EMAIL_KEY = "signup_pending_email"

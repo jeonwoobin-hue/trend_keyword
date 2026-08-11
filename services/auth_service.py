@@ -13,7 +13,7 @@
 
 import random
 
-from config.constants import MIN_PASSWORD_LENGTH, SIGNUP_VERIFICATION_CODE_LENGTH
+from config.constants import ADMIN_EMAILS, MIN_PASSWORD_LENGTH, SIGNUP_VERIFICATION_CODE_LENGTH, UserRole
 from models.auth import AuthUser
 from utils.validators import is_valid_email
 
@@ -25,6 +25,13 @@ class AuthError(Exception):
         super().__init__(message)
         self.code = code
         self.message = message
+
+
+def _resolve_role(email: str) -> str:
+    """이메일이 관리자 화이트리스트(config.ADMIN_EMAILS)에 있으면 관리자 역할을 부여한다."""
+    if email.lower() in {admin_email.lower() for admin_email in ADMIN_EMAILS}:
+        return UserRole.ADMIN
+    return UserRole.USER
 
 
 def login(email: str, password: str) -> AuthUser:
@@ -43,7 +50,7 @@ def login(email: str, password: str) -> AuthUser:
         raise AuthError("VALID_002", f"비밀번호는 최소 {MIN_PASSWORD_LENGTH}자 이상이어야 합니다.")
 
     display_name = normalized_email.split("@", 1)[0]
-    return AuthUser(email=normalized_email, display_name=display_name)
+    return AuthUser(email=normalized_email, display_name=display_name, role=_resolve_role(normalized_email))
 
 
 def request_signup_verification(
@@ -85,7 +92,7 @@ def complete_signup(email: str) -> AuthUser:
     """이메일 인증 완료 후 계정을 생성한다."""
     normalized_email = email.strip()
     display_name = normalized_email.split("@", 1)[0]
-    return AuthUser(email=normalized_email, display_name=display_name)
+    return AuthUser(email=normalized_email, display_name=display_name, role=_resolve_role(normalized_email))
 
 
 def _generate_verification_code() -> str:
@@ -131,4 +138,5 @@ def login_with_social_provider(provider: str) -> AuthUser:
     실제 OAuth 연동 전까지, 실제 동의 화면 없이 즉시 로그인 처리한다.
     """
     display_name = f"{provider}_user"
-    return AuthUser(email=f"{display_name}@example.com", display_name=display_name)
+    email = f"{display_name}@example.com"
+    return AuthUser(email=email, display_name=display_name, role=_resolve_role(email))

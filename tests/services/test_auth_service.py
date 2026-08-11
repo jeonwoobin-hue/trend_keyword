@@ -2,7 +2,7 @@
 
 import pytest
 
-from config.constants import MIN_PASSWORD_LENGTH, SIGNUP_VERIFICATION_CODE_LENGTH
+from config.constants import ADMIN_EMAILS, MIN_PASSWORD_LENGTH, SIGNUP_VERIFICATION_CODE_LENGTH, UserRole
 from services.auth_service import (
     AuthError,
     complete_signup,
@@ -20,6 +20,23 @@ def test_login_success_derives_display_name_from_email():
 
     assert user.email == "trend.fit@example.com"
     assert user.display_name == "trend.fit"
+
+
+def test_login_default_role_is_user():
+    user = login("trend.fit@example.com", "password123")
+    assert user.role == UserRole.USER
+
+
+def test_login_whitelisted_email_gets_admin_role():
+    admin_email = ADMIN_EMAILS[0]
+    user = login(admin_email, "password123")
+    assert user.role == UserRole.ADMIN
+
+
+def test_login_whitelisted_email_role_check_is_case_insensitive():
+    admin_email = ADMIN_EMAILS[0].upper()
+    user = login(admin_email, "password123")
+    assert user.role == UserRole.ADMIN
 
 
 def test_login_trims_email_whitespace():
@@ -82,6 +99,11 @@ def test_complete_signup_derives_display_name_from_email():
 
     assert user.email == "new.user@example.com"
     assert user.display_name == "new.user"
+
+
+def test_complete_signup_whitelisted_email_gets_admin_role():
+    user = complete_signup(ADMIN_EMAILS[0])
+    assert user.role == UserRole.ADMIN
 
 
 def test_request_password_reset_returns_code_of_configured_length():
