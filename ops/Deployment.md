@@ -8,7 +8,7 @@
 - [ ] 프론트엔드(Streamlit 앱)
 - [ ] 백엔드 API(FastAPI)
 - [ ] 배치 워커(스케줄러)
-- [ ] DB(Supabase/PostgreSQL 등)
+- [ ] DB(Supabase/PostgreSQL — 2026-08-11 확정, 아직 프로젝트 미생성)
 
 ## 환경변수/시크릿 체크리스트
 

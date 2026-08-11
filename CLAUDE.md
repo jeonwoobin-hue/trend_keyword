@@ -104,7 +104,7 @@ TrendFit은 사용자의 관심 분야·목적·연령대·선호 플랫폼에 �
 - 백엔드 API: FastAPI — [TrendFit-ux-docs/functional-spec.md](TrendFit-ux-docs/functional-spec.md)에
   정의된 REST 계약(`/api/v1/...`)을 구현
 - 배치/스케줄러: APScheduler 또는 Celery(대상 인프라 확정 후 결정) — Spike Score 시간당 재계산, 알림 발송
-- DB: Supabase(PostgreSQL) 재사용 권장(확정 아님) — 블로그 프로젝트에서의 운영 경험 활용
+- DB: Supabase(PostgreSQL) — 블로그 프로젝트에서의 운영 경험 재사용 (2026-08-11 확정)
 - 인증: JWT(NFR-SEC-003, 24시간 만료) + 이메일/구글·카카오 소셜 로그인
 
 ```
