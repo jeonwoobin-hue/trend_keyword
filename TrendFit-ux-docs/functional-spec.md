@@ -1,11 +1,16 @@
 # TrendFit 기능 명세서
 
-문서 버전 v1.1 · 작성일 2026-08-08
-아래는 SRS(v1.1)의 P1 핵심 기능 8종에 대한 상세 명세다.
+문서 버전 v1.2 · 작성일 2026-08-08
+아래는 SRS(v1.2)의 P1 핵심 기능 8종에 대한 상세 명세다.
 
 > **v1.1 변경 이력(2026-08-12)**: FR-ONBOARD-001 입력값 표의 `interests`(네이버 주제 필터 기준
 > 20개 확정 목록), `purpose`(`purchase` → `sales`), `platforms`(`naver_blog, youtube, instagram,
 > threads`로 축소·변경) 갱신. 상세 목록은 [srs.md](srs.md) v1.1 변경 이력 참고.
+
+> **v1.2 변경 이력(2026-08-11)**: SRS 참조 버전을 v1.2로 갱신(내용 변경 없음, 문서 버전 동기화
+> 목적). 이 문서가 다루는 P1 핵심 기능 8종에는 화면 내비게이션(IA)이나 FR-ADMIN-*(관리자 역할
+> 판별)이 포함되지 않는다 — 상단 메뉴 개편은 [ia.md](ia.md) v1.2, 관리자 역할 판별 구현은
+> [Feature_Roadmap.md](../docs/Feature_Roadmap.md) 참고.
 
 ---
 
