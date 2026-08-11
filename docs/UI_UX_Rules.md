@@ -35,3 +35,38 @@
 
 - 새 UI를 만들기 전 `components/`에 유사한 컴포넌트가 있는지 먼저 확인합니다.
 - 여러 페이지에서 2회 이상 반복되는 UI 패턴(키워드 카드, 게이지, 알림 배지 등)은 즉시 `components/`로 분리합니다.
+
+## 6. 전역 내비게이션 (상단 메뉴)
+
+Streamlit 기본 사이드바(전체 화면 평면 나열)는 [components/top_nav.py](../components/top_nav.py)가
+대체한다. 화면 위쪽에 홈/트렌드/인사이트/마이페이지/관리자 5개 그룹을 두고, 마우스를 올리면
+하위 화면이 드롭다운으로 펼쳐지는 방식이다(관리자 그룹은 `AuthUser.role`이 관리자인 세션에서만
+보임). 실제 그룹 구성은 [ia.md](../TrendFit-ux-docs/ia.md) "상단 메뉴 구조" 절 참고.
+
+### 동작 원리 (우회 구현이라 주의 필요)
+
+Streamlit의 `st.markdown(unsafe_allow_html=True)`는 보안상 `onclick` 같은 인라인 이벤트 속성을
+조용히 제거하고, 순수 HTML `<a href>` 클릭은 (네이티브 사이드바 링크와 달리) 브라우저가 실제로
+새로고침하면서 `session_state`가 통째로 초기화된다. 그래서 `top_nav.py`는:
+
+1. 메뉴 UI 자체는 `st.markdown(unsafe_allow_html=True)`로 그리고, CSS로 네이티브 사이드바를 숨긴다
+   (`[data-testid="stSidebar"] { display: none; }`) — 사이드바 링크 자체는 여전히 DOM에 남아있다.
+2. 화면에 보이지 않는 `st.components.v1.html()` iframe에 `<script>`를 심어, `document`에 클릭
+   위임 리스너를 하나 붙인다. iframe은 부모 문서와 동일 출처라 `window.parent.document`에 접근할
+   수 있고, 여기 담긴 스크립트는 (markdown과 달리) 정상적으로 실행된다.
+3. 메뉴 항목 클릭 시 실제 이동은 막고(`preventDefault`), 같은 경로를 가진 숨겨진 네이티브
+   사이드바 링크(`data-testid="stSidebarNavLink"`)를 대신 클릭한다 — 이 네이티브 링크는 Streamlit
+   프론트엔드의 클라이언트 사이드 라우팅을 타므로 세션이 유지된다.
+
+### 유지보수 시 주의사항
+
+- **페이지 이동 시마다 리스너를 새로 붙인다.** "이미 붙였으면 건너뛰기" 같은 플래그를 `document`에
+  남기지 말 것 — 이전 페이지의 iframe이 사라지면 브라우저가 그 iframe이 등록한 리스너도 자동으로
+  정리해 버려서, 플래그만 "이미 붙어있음"으로 남고 실제로 반응하는 리스너는 없는 상태가 된다(과거에
+  겪은 버그: 메뉴를 두 번째 클릭부터 진짜 새로고침이 일어나 로그인 세션이 날아갔다).
+- 메뉴 항목 추가/수정은 `top_nav.py`의 `_NAV_GROUPS`만 고치면 된다. `href`는 `_slug()`가 `pages/`
+  파일명 규칙(앞자리 숫자·아이콘 이모지 제거)에서 자동으로 계산하므로 직접 문자열을 만들지 않는다.
+- 이 구현은 `data-testid="stSidebarNavLink"`, `unsafe_allow_html`의 속성 제거 동작,
+  `components.html`의 iframe이 동일 출처라는 점 등 Streamlit 내부 동작에 의존한다 — 공식 API가
+  아니므로 Streamlit 버전을 올릴 때 깨질 수 있다. 문제가 생기면 `st.navigation`에 섹션 딕셔너리를
+  넘기는 네이티브 방식(그룹 사이드바, 호버 드롭다운은 아니지만 안전함)으로 되돌리는 걸 우선 검토한다.
