@@ -119,7 +119,8 @@ def test_login_bootstraps_profile_on_first_login(monkeypatch):
     client = _FakeClient(
         auth=_FakeAuth(sign_in_with_password=lambda _creds: auth_response),
         table_responses={
-            "select": SimpleNamespace(data=None),
+            # maybe_single().execute()는 일치하는 행이 없으면 None을 그대로 반환한다(postgrest-py).
+            "select": None,
             "insert": SimpleNamespace(data=[_profile_row(admin_email.split("@")[0], UserRole.ADMIN)]),
         },
     )
@@ -228,7 +229,7 @@ def test_complete_signup_success_returns_user_and_session(monkeypatch):
     client = _FakeClient(
         auth=_FakeAuth(verify_otp=lambda _params: auth_response),
         table_responses={
-            "select": SimpleNamespace(data=None),
+            "select": None,  # maybe_single().execute()는 일치하는 행이 없으면 None을 그대로 반환한다.
             "insert": SimpleNamespace(data=[_profile_row("new.user")]),
         },
     )

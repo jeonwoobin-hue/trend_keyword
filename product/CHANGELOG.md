@@ -2,6 +2,26 @@
 
 날짜순으로 기록합니다 (최신이 위).
 
+## 2026-08-12 (4)
+
+- 이메일 인증 코드(OTP) 발송을 실제로 완성. Supabase 기본 메일러는 커스텀 SMTP 없이는 템플릿
+  편집 자체가 막혀 있어(대시보드에서 확인), Resend를 커스텀 SMTP로 연결하고 "Confirm signup"·
+  "Reset Password" 템플릿을 `{{ .Token }}`(6자리 코드) 방식으로 교체. 발신자는 Resend 도메인
+  미검증 상태라 `onboarding@resend.dev`로 설정(도메인 검증 시 자체 도메인으로 교체 필요,
+  [ops/Deployment.md](../ops/Deployment.md) 참고).
+- **실제 이메일로 전체 플로우 검증**: `jeonwoobin@gmail.com`으로 회원가입 → 실제 수신한 코드로
+  `complete_signup()` 호출까지 end-to-end로 확인. 사용자 요청으로 이 테스트 계정은 삭제하지 않고
+  유지.
+- **버그 픽스(실제 검증 중 발견)**: `_load_or_create_profile()`이 `maybe_single().execute()`의
+  반환값에서 곧바로 `.data`에 접근하고 있었는데, postgrest-py는 일치하는 행이 없으면 `.data`가
+  `None`인 응답 객체가 아니라 **`execute()` 자체가 `None`을 반환**한다(`Optional[SingleAPIResponse]`).
+  그 결과 최초 회원가입/로그인처럼 프로필이 아직 없는, 실제로는 가장 흔한 경로에서
+  `AttributeError`로 크래시가 나고 있었다 — 가짜 클라이언트로 만든 단위 테스트는 이 케이스를
+  `SimpleNamespace(data=None)`으로 잘못 흉내 내고 있어 걸러내지 못했고, 실제 이메일로 처음부터
+  끝까지 테스트하는 과정에서만 드러났다. `existing is not None and existing.data`로 수정하고,
+  테스트 픽스처도 실제 동작(`None` 반환)에 맞게 정정.
+- 전체 테스트 106건 통과.
+
 ## 2026-08-12 (3)
 
 - 회원 탈퇴(MY-002, FR-PROFILE-004) 시 Supabase의 실제 계정 삭제까지 마무리. `services/auth_service.

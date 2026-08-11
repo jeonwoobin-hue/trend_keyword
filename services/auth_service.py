@@ -44,8 +44,11 @@ def _session_to_model(session) -> AuthSession:
 
 def _load_or_create_profile(client, user_id: str, email: str) -> dict:
     """`trendfit.profiles`에서 프로필을 가져오고, 없으면(최초 로그인/가입 직후) 만든다."""
+    # postgrest-py의 maybe_single().execute()는 일치하는 행이 없으면 .data가 None인 응답이 아니라
+    # execute() 자체가 None을 반환한다(Optional[SingleAPIResponse]) — .data부터 바로 접근하면
+    # 행이 없는 정상 케이스(최초 로그인)에서 AttributeError가 난다.
     existing = client.table("profiles").select("*").eq("id", user_id).maybe_single().execute()
-    if existing.data:
+    if existing is not None and existing.data:
         return existing.data
 
     display_name = email.split("@", 1)[0]
