@@ -35,6 +35,26 @@
 - `docs/Feature_Roadmap.md` 구현 현황을 위 내용 기준으로 갱신
 - 위 화면들은 전부 `services/`의 목(mock) 데이터로 동작 — 실제 백엔드(`api/`)·배치 워커(`worker/`)·
   외부 데이터 연동은 미착수. SRS의 8개 P1 기능 영역(인증~관리자) 화면이 모두 최소 목업으로 구현됨
+- 관심 분야를 네이버 주제 필터 기준 20개 카테고리로 확장 — `services/dashboard_service.py` 목
+  데이터 풀 보강, `TrendFit-ux-docs/srs.md`·`functional-spec.md`·`ia.md` v1.1로 갱신
+- 사이드바 15개 화면 평면 나열을 상단 호버 드롭다운 메뉴(홈/트렌드/인사이트/마이페이지/관리자)로
+  개편 — 신규 `components/top_nav.py`. 순수 HTML 링크 클릭 시 Streamlit 세션이 초기화되는 문제를
+  발견해, 화면에 보이지 않는 iframe 스크립트로 숨겨진 네이티브 사이드바 링크를 대신 클릭하는
+  방식으로 우회
+- 관리자 역할(role) 기반 접근 제어 구현 — `AuthUser.role`, `config.ADMIN_EMAILS` 화이트리스트
+  (정식 사용자 저장소 도입 전 임시 방식), `app/auth_guard.py`의 `require_admin()`. 관리자
+  화면(ADMIN-001/002)과 상단 메뉴의 관리자 그룹 노출을 로그인 여부가 아닌 역할 기준으로 제한
+- `product/Backlog.md` 상태값을 실제 코드와 대조해 정정 — BL-001·002·004·008·009·010·012를
+  대기→완료로, BL-003(연령/성별 가중치 보정)은 UI/모델만 있고 실제 산식이 없어 진행중으로 반영
+- `docs/Feature_Roadmap.md` 구현 현황 표를 위 정정에 맞춰 갱신, 관리자 역할 접근 제어 설명
+  최신화, 테스트 건수(67→91)·서비스 모듈 수(7→8, `report_export_service.py` 누락 보완) 정정
+- `TrendFit-ux-docs/ia.md`를 v1.2로 갱신 — 비밀번호 재설정을 별도 화면(COM-004)으로 승격,
+  실제 상단 메뉴 그룹을 반영한 "상단 메뉴 구조" 절/다이어그램 신규 추가(콘텐츠 흐름 계층도는
+  원본 그대로 유지)
+- `TrendFit-ux-docs/srs.md`·`functional-spec.md`를 v1.2로 갱신 — 문서 간 버전 참조 동기화,
+  관리자 역할 판별 방식(이메일 화이트리스트 임시 방식) 각주 추가. 요구사항 텍스트 자체는 변경 없음
+- `tests/services/test_auth_service.py`에 역할 판별 테스트 4건 추가, `python -m pytest -q` 91건
+  전체 통과 확인
 
 ## 2026-08-10
 
