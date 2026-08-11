@@ -13,7 +13,7 @@
 
 | 영역 | 관련 화면 | 대표 요구사항 | 구현 현황 |
 |---|---|---|---|
-| 인증 | COM-001~003 | FR-AUTH-001 이메일 로그인, FR-AUTH-002 소셜 로그인, FR-AUTH-003 회원가입, FR-AUTH-004 비밀번호 재설정, FR-AUTH-005 로그아웃 | 2026-08-12부터 Supabase Auth(`auth.users`) 실제 연동 (`Home.py`, `pages/0_로그인`, `pages/1_회원가입`, `pages/13_비밀번호_재설정`, `pages/6_마이페이지`, `services/auth_service.py`) — 이메일 로그인·회원가입(이메일 OTP 인증)·비밀번호 재설정 모두 실제 계정 저장소 기반. TrendFit 전용 필드는 `trendfit.profiles`에 저장([docs/Architecture.md](Architecture.md), `supabase/migrations/`). 소셜 로그인은 여전히 실제 OAuth 연동 전 목업(P2) |
+| 인증 | COM-001~003 | FR-AUTH-001 이메일 로그인, FR-AUTH-002 소셜 로그인, FR-AUTH-003 회원가입, FR-AUTH-004 비밀번호 재설정, FR-AUTH-005 로그아웃 | 2026-08-12부터 Supabase Auth(`auth.users`) 실제 연동 (`Home.py`, `pages/0_로그인`, `pages/1_회원가입`, `pages/13_비밀번호_재설정`, `pages/6_마이페이지`, `services/auth_service.py`) — 이메일 로그인·회원가입(이메일 OTP 인증)·비밀번호 재설정 모두 실제 계정 저장소 기반. TrendFit 전용 필드는 `trendfit.profiles`에 저장([docs/Architecture.md](Architecture.md), `supabase/migrations/`). 소셜 로그인(구글/카카오, P2)도 Supabase Auth OAuth(PKCE)로 실제 연동 완료 — `get_social_login_url()`/`complete_social_login()`. Supabase 대시보드에서 Google/Kakao Provider의 Client ID·Secret 등록과 Redirect URLs 설정이 선행되어야 실제로 동작함(ops/Deployment.md 참고) |
 | 관심사 온보딩 | ONBOARD-001, 002 | FR-ONBOARD-001~003 관심 분야/목적/조건 설정 및 저장 | ONBOARD-001 목업 구현 (`pages/2_관심사_설정`) — ONBOARD-002는 별도 화면 대신 같은 페이지 내 제출 후 요약으로 대체 |
 | 트렌드 대시보드 | DASH-001 | FR-DASH-001 핫 키워드, FR-DASH-002 언급량 시각화, FR-DASH-006 기간 필터 | 목업 구현 (`pages/3_트렌드_대시보드`) |
 | Spike Score | DASH-001/002, ADMIN-001 | FR-DASH-003 급상승 지수 산출(배치) | 화면 표시값만 목업(난수 생성) — 실제 산출식·배치 워커는 미착수 |

@@ -2,6 +2,40 @@
 
 날짜순으로 기록합니다 (최신이 위).
 
+## 2026-08-12 (6)
+
+- 소셜 로그인(FR-AUTH-002) 대시보드 설정 완료. Google Cloud Console에 TrendFit 전용 OAuth 클라이언트
+  (기존에 다른 용도로 있던 클라이언트는 재사용하지 않고 새로 생성), Kakao Developers에 TrendFit 앱을
+  만들고 둘 다 Supabase 콜백 URL을 리다이렉트 URI로 등록. Supabase Authentication → Providers에서
+  Google/Kakao 활성화 + Client ID/Secret 등록, → URL Configuration → Redirect URLs에
+  `http://localhost:8501/로그인` 추가.
+  - 실제 authorize URL로 왕복 검증: 처음엔 Google이 "provider is not enabled"로 실패 —
+    Client ID/Secret은 맞게 들어가 있었지만 "Enable Sign in with Google" 토글 자체가 꺼져 있던
+    설정 누락이었음, 토글 켜고 해결. 이후 구글/카카오 둘 다 실제 로그인 화면(accounts.google.com,
+    accounts.kakao.com)까지 정상 도달하는 것을 브라우저로 확인.
+  - 카카오는 스크립트(urllib)로 테스트할 때만 404가 났는데, 실제 브라우저로 확인하니 정상 —
+    카카오 로그인 페이지의 봇 차단성 동작으로 판단, 실제 설정 문제 아님.
+  - 최종 로그인 완료(비밀번호 입력)는 사용자 본인 계정으로 직접 테스트 필요.
+
+## 2026-08-12 (5)
+
+- 소셜 로그인(FR-AUTH-002, P2) 코드 연동 착수. `login_with_social_provider()`(완전 목업) 제거,
+  대신 `get_social_login_url()`/`complete_social_login()` 추가 — Supabase Auth OAuth(PKCE) 흐름.
+  - Streamlit은 서버사이드 프레임워크라 SDK의 `sign_in_with_oauth()`가 기대하는 "브라우저가
+    콜백을 자동으로 받는" 모델을 못 씀 — 대신 `code_verifier`/`code_challenge`를
+    `supabase_auth.helpers`로 직접 만들어 Supabase `/auth/v1/authorize`로 리다이렉트하고,
+    `pages/0_로그인`이 되돌아온 `?code=`를 `st.query_params`로 읽어 `exchange_code_for_session()`
+    으로 세션을 교환한다.
+  - `code_verifier`는 프로바이더별로 `st.session_state[SessionKeys.OAUTH_CODE_VERIFIERS]`(dict)에
+    저장. 콜백 시점엔 어느 프로바이더로 로그인했는지 알 수 없어 저장된 후보를 순서대로 시도.
+  - `config.constants.APP_BASE_URL` 추가(OAuth `redirect_to` 등에 사용, 로컬 개발 기준값 — 배포
+    도메인이 정해지면 Supabase Redirect URLs와 함께 갱신 필요).
+  - **아직 남은 것(대시보드 설정)**: Supabase Authentication → Providers에 Google/Kakao Client
+    ID·Secret 등록, → URL Configuration에 Redirect URL 등록. 둘 다 각 콘솔(Google Cloud Console,
+    Kakao Developers)에서 앱 등록이 먼저 필요해 별도로 진행 예정([ops/Deployment.md](../ops/Deployment.md)
+    참고) — 코드는 준비됐지만 이 설정 전까지는 실제 로그인이 되지 않음.
+- 전체 테스트 109건 통과.
+
 ## 2026-08-12 (4)
 
 - 이메일 인증 코드(OTP) 발송을 실제로 완성. Supabase 기본 메일러는 커스텀 SMTP 없이는 템플릿

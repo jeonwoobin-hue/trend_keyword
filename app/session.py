@@ -17,6 +17,7 @@ def _default_session_values() -> dict:
         SessionKeys.ONBOARDING_PREVIEW_KEYWORDS: [],
         SessionKeys.AUTH_USER: None,
         SessionKeys.AUTH_SESSION: None,
+        SessionKeys.OAUTH_CODE_VERIFIERS: {},
         SessionKeys.ONBOARD_EDIT_MODE: False,
         SessionKeys.REPORTS: [],
         SessionKeys.SELECTED_REPORT_ID: None,

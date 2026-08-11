@@ -25,6 +25,7 @@ class SessionKeys:
     ONBOARDING_PREVIEW_KEYWORDS = "onboarding_preview_keywords"
     AUTH_USER = "auth_user"
     AUTH_SESSION = "auth_session"
+    OAUTH_CODE_VERIFIERS = "oauth_code_verifiers"
     ONBOARD_EDIT_MODE = "onboard_edit_mode"
     REPORTS = "reports"
     SELECTED_REPORT_ID = "selected_report_id"
@@ -216,11 +217,17 @@ ADMIN_EMAILS = [
 ]
 
 # --- 소셜 로그인(COM-002) 정책 (SRS FR-AUTH-002, P2) ---
-# 실제 OAuth 연동 전까지 버튼 클릭 시 즉시 로그인 처리하는 목(mock)이다.
+# Supabase Auth의 Provider 식별자와 동일해야 한다("google"/"kakao").
 SOCIAL_PROVIDERS = [
     ("google", "구글"),
     ("kakao", "카카오"),
 ]
+
+# --- 앱 기본 URL (OAuth redirect_to 등에 사용) ---
+# 배포 인프라가 아직 확정되지 않아(CLAUDE.md §6) 로컬 개발 기준값이다. 실제 배포 도메인이
+# 정해지면 이 값과 Supabase Authentication → URL Configuration의 Redirect URLs를 함께 갱신할 것
+# (REPORT_SHARE_LINK_BASE_URL과 같은 성격의 "실제 배포 전 임시값").
+APP_BASE_URL = "http://localhost:8501"
 
 # --- 인사이트 리포트(REPORT-001) 정책 (functional-spec FR-REPORT-001) ---
 MAX_REPORT_TITLE_LENGTH = 50  # 미입력 시 자동 생성

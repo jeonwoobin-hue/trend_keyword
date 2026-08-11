@@ -6,13 +6,21 @@ Supabase Auth(`auth.users`)로 인증하고, TrendFit 전용 필드(표시 이�
 Authentication → Email Templates에서 "Confirm signup"·"Reset password" 템플릿에 `{{ .Token }}`이
 포함되도록 설정되어 있어야 실제로 코드가 발송된다(기본 템플릿은 링크 방식, ops/Deployment.md 참고).
 
-소셜 로그인(FR-AUTH-002, P2)은 실제 OAuth 연동 전이라 여전히 목(mock)이다 — 실제 연동 시 Supabase
-Authentication → Providers 설정과 Streamlit의 리다이렉트 처리(별도 작업)가 필요하다.
+소셜 로그인(FR-AUTH-002)은 Supabase Auth의 OAuth(PKCE) 흐름을 쓴다. Streamlit은 서버사이드
+프레임워크라 브라우저의 OAuth 리다이렉트 콜백을 자동으로 받을 수 없으므로, `sign_in_with_oauth()`가
+내부적으로 처리하는 PKCE `code_verifier`를 여기서 직접 생성해 호출부(`pages/0_로그인`)가
+`st.session_state`에 보관하게 하고, 리다이렉트로 돌아온 뒤 `complete_social_login()`으로 세션을
+교환한다. Supabase Authentication → Providers에서 구글/카카오 Client ID·Secret 설정, →
+URL Configuration의 Redirect URLs에 로그인 페이지 URL 등록이 선행되어야 한다(ops/Deployment.md 참고).
 """
 
+from urllib.parse import urlencode
+
 from supabase_auth.errors import AuthApiError
+from supabase_auth.helpers import generate_pkce_challenge, generate_pkce_verifier
 
 from config.constants import ADMIN_EMAILS, MIN_PASSWORD_LENGTH, UserRole
+from config.secrets import get_secret_section
 from models.auth import AuthSession, AuthUser
 from services.supabase_client import create_supabase_client, get_supabase_admin_client
 from utils.validators import is_valid_email
@@ -263,13 +271,48 @@ def delete_account(user_id: str) -> None:
         raise AuthError("SERVER_005", "회원 탈퇴 처리에 실패했습니다. 잠시 후 다시 시도해주세요.") from error
 
 
-def login_with_social_provider(provider: str) -> AuthUser:
-    """소셜 로그인(FR-AUTH-002)을 시뮬레이션한다.
+def get_social_login_url(provider: str, redirect_to: str) -> tuple[str, str]:
+    """소셜 로그인(FR-AUTH-002) 시작 URL과 그에 대응하는 PKCE `code_verifier`를 만든다.
 
-    실제 OAuth 연동 전까지, 실제 동의 화면 없이 즉시 로그인 처리한다. Supabase Auth와 연결되어
-    있지 않으므로 `id`도 세션 내 임시값이고, 비밀번호 변경 등 실제 세션 토큰이 필요한 기능은
-    이 경로로 로그인한 계정에서는 쓸 수 없다.
+    `code_verifier`는 호출부가 `st.session_state`에 저장해뒀다가, Supabase가 `redirect_to`로
+    되돌려줄 때 함께 오는 `?code=`와 짝지어 `complete_social_login()`에 넘겨야 한다.
     """
-    display_name = f"{provider}_user"
-    email = f"{display_name}@example.com"
-    return AuthUser(id=f"mock-{provider}", email=email, display_name=display_name, role=_resolve_role(email))
+    verifier = generate_pkce_verifier()
+    challenge = generate_pkce_challenge(verifier)
+    challenge_method = "plain" if verifier == challenge else "s256"
+
+    base_url = get_secret_section("supabase")["url"].rstrip("/")
+    query = urlencode(
+        {
+            "provider": provider,
+            "redirect_to": redirect_to,
+            "code_challenge": challenge,
+            "code_challenge_method": challenge_method,
+        }
+    )
+    return f"{base_url}/auth/v1/authorize?{query}", verifier
+
+
+def complete_social_login(auth_code: str, code_verifier: str) -> tuple[AuthUser, AuthSession]:
+    """OAuth 리다이렉트로 돌아온 뒤, 인증 코드를 세션으로 교환해 로그인을 완료한다.
+
+    Raises:
+        AuthError: 코드가 올바르지 않거나 만료된 경우(예: 다른 프로바이더의 `code_verifier`로
+            잘못 시도한 경우도 여기 포함됨 — 호출부가 저장된 후보들을 순서대로 시도해야 한다).
+    """
+    client = create_supabase_client()
+    try:
+        auth_response = client.auth.exchange_code_for_session(
+            {"auth_code": auth_code, "code_verifier": code_verifier}
+        )
+    except AuthApiError as error:
+        raise AuthError("VALID_002", "소셜 로그인 처리에 실패했습니다. 다시 시도해주세요.") from error
+
+    user, session = auth_response.user, auth_response.session
+    scoped_client = create_supabase_client(access_token=session.access_token)
+    # 소셜 프로바이더에 따라 이메일이 없을 수 있어(비공개 설정 등) user.id로 대체 표시용 값을 만든다.
+    email = user.email or f"{user.id}@social.trendfit"
+    profile = _load_or_create_profile(scoped_client, user.id, email)
+
+    auth_user = AuthUser(id=user.id, email=email, display_name=profile["display_name"], role=profile["role"])
+    return auth_user, _session_to_model(session)

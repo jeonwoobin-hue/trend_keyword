@@ -16,9 +16,10 @@ from services.auth_service import (
     AuthError,
     change_password,
     complete_signup,
+    complete_social_login,
     delete_account,
+    get_social_login_url,
     login,
-    login_with_social_provider,
     request_password_reset,
     request_signup_verification,
     reset_password,
@@ -419,11 +420,60 @@ def test_delete_account_failure_raises_server_005(monkeypatch):
     assert exc_info.value.code == "SERVER_005"
 
 
-# --- login_with_social_provider (여전히 목) ---
+# --- get_social_login_url / complete_social_login (OAuth PKCE) ---
 
 
-def test_login_with_social_provider_derives_user_from_provider():
-    user = login_with_social_provider("google")
+def test_get_social_login_url_embeds_provider_and_challenge(monkeypatch):
+    monkeypatch.setattr(
+        auth_service, "get_secret_section", lambda _section: {"url": "https://proj.supabase.co"}
+    )
 
-    assert user.email == "google_user@example.com"
-    assert user.display_name == "google_user"
+    url, verifier = get_social_login_url("google", "http://localhost:8501/로그인")
+
+    assert url.startswith("https://proj.supabase.co/auth/v1/authorize?")
+    assert "provider=google" in url
+    assert "code_challenge=" in url
+    assert "code_challenge_method=s256" in url
+    assert len(verifier) == 64
+    assert verifier not in url  # URL에는 challenge(해시값)만 담기고 verifier 원문은 없어야 한다
+
+
+def test_get_social_login_url_different_calls_produce_different_verifiers(monkeypatch):
+    monkeypatch.setattr(
+        auth_service, "get_secret_section", lambda _section: {"url": "https://proj.supabase.co"}
+    )
+
+    _, verifier_a = get_social_login_url("google", "http://localhost:8501/로그인")
+    _, verifier_b = get_social_login_url("kakao", "http://localhost:8501/로그인")
+
+    assert verifier_a != verifier_b
+
+
+def test_complete_social_login_success_returns_user_and_session(monkeypatch):
+    auth_response = _fake_auth_response(user_id="uuid-oauth", email="oauth.user@example.com")
+    client = _FakeClient(
+        auth=_FakeAuth(exchange_code_for_session=lambda _params: auth_response),
+        table_responses={
+            "select": None,
+            "insert": SimpleNamespace(data=[_profile_row("oauth.user")]),
+        },
+    )
+    _patch_client(monkeypatch, client)
+
+    user, session = complete_social_login("auth-code", "code-verifier")
+
+    assert user.id == "uuid-oauth"
+    assert user.email == "oauth.user@example.com"
+    assert session.access_token == "access-token"
+
+
+def test_complete_social_login_invalid_code_raises_valid_002(monkeypatch):
+    def _raise(_params):
+        raise AuthApiError("invalid code", 400, "bad_code_verifier")
+
+    client = _FakeClient(auth=_FakeAuth(exchange_code_for_session=_raise))
+    _patch_client(monkeypatch, client)
+
+    with pytest.raises(AuthError) as exc_info:
+        complete_social_login("auth-code", "wrong-verifier")
+    assert exc_info.value.code == "VALID_002"

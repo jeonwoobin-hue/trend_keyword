@@ -26,7 +26,19 @@
     때 `None`을 그대로 반환하는 걸 놓쳐 최초 가입 시 크래시 나던 버그를 발견해 수정
   - [ ] Authentication → Sessions의 JWT 만료 시간이 NFR-SEC-003(24시간) 기준과 맞는지(기본값은
     보통 1시간)
-  - [ ] 소셜 로그인(FR-AUTH-002, P2)은 아직 미착수(OAuth 프로바이더 설정 필요)
+  - [x] 소셜 로그인(FR-AUTH-002, P2) 코드 연동 완료(2026-08-12) — `get_social_login_url()`이
+    PKCE `code_verifier`/`code_challenge`를 직접 만들어 Supabase `/auth/v1/authorize`로 보내고,
+    리다이렉트로 돌아오면 `complete_social_login()`이 `exchange_code_for_session()`으로 세션을
+    교환한다(Streamlit은 브라우저 콜백을 못 받아 SDK의 `sign_in_with_oauth()`는 쓰지 않음).
+    - [x] Google Cloud Console에 TrendFit 전용 OAuth 클라이언트(웹 애플리케이션) 생성, Kakao
+      Developers에 TrendFit 앱 생성 — 둘 다 리다이렉트 URI를 Supabase 콜백
+      (`https://qyqahxckbzbvrvtqdbdi.supabase.co/auth/v1/callback`)으로 등록(2026-08-12)
+    - [x] Supabase Authentication → Providers에서 Google/Kakao 활성화 + Client ID/Secret 등록,
+      → URL Configuration → Redirect URLs에 `http://localhost:8501/로그인` 추가(2026-08-12).
+      배포 도메인이 정해지면 그 URL도 추가하고 `config.constants.APP_BASE_URL` 갱신 필요
+    - [x] 실제 authorize URL을 브라우저로 왕복해 구글/카카오 각자의 실제 로그인 화면까지 뜨는 것
+      확인(2026-08-12) — 계정 비밀번호 입력 후 최종 로그인 완료는 사용자가 직접 테스트 필요
+      (구글/카카오 비밀번호는 대신 입력할 수 없음)
   - [ ] Resend 발신 도메인 검증(실제 서비스 오픈 전 — 지금은 `onboarding@resend.dev`로만 발송 가능)
 
 ## 환경변수/시크릿 체크리스트
@@ -39,7 +51,7 @@
 | 외부 트렌드/소셜/뉴스 API 키 | [docs/API_Design.md](../docs/API_Design.md) §8 연동 현황 참고 | `.streamlit/secrets.toml` |
 | DB 접속 정보 | Supabase 등 | `.streamlit/secrets.toml` |
 | JWT 시크릿 | 인증 토큰 서명 | 환경변수 |
-| OAuth 클라이언트 ID/Secret | 구글/카카오 소셜 로그인 | 환경변수 |
+| OAuth 클라이언트 ID/Secret | 구글/카카오 소셜 로그인 | Supabase 대시보드(Authentication → Providers)에 직접 저장 — 앱 코드/secrets.toml에는 없음 |
 | 이메일 발송(Resend SMTP) 자격증명 | 회원가입/비밀번호 재설정 인증 메일(Supabase Auth 내장 발송) | Supabase 대시보드(Authentication → Emails → SMTP Settings)에 직접 저장 — 앱 코드/secrets.toml에는 없음 |
 
 ## 배포 체크리스트 (초안)
