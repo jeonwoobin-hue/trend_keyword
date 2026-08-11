@@ -32,6 +32,7 @@ class SessionKeys:
     CURATION_ACTIVE_KEYWORD = "curation_active_keyword"
     CURATION_KEYWORD_FILTER = "curation_keyword_filter"
     CURATION_PLATFORM_FILTER = "curation_platform_filter"
+    SELECTED_CONTENT_ID = "selected_content_id"
     SCRAPPED_CONTENTS = "scrapped_contents"
     ADMIN_SPIKE_BATCH_STATUS = "admin_spike_batch_status"
     ADMIN_USERS = "admin_users"
@@ -259,7 +260,7 @@ REPORT_PDF_FONT_PATH = "C:/Windows/Fonts/malgun.ttf"
 # 실제 백엔드/영속 저장소가 없어, 다른 세션·기기에서는 열리지 않는 표시용 목 링크다.
 REPORT_SHARE_LINK_BASE_URL = "https://trendfit.app/reports"
 
-# --- 콘텐츠 큐레이션(CURATE-001) 정책 (functional-spec FR-CURATE-001) ---
+# --- 콘텐츠 큐레이션(CURATE-001/002) 정책 (functional-spec FR-CURATE-001, IA CURATE-002) ---
 CURATION_PAGE_SIZE = 10  # 커서 1회 요청당 반환 개수
 CURATION_TOTAL_MOCK_ITEMS = 37  # "더 보기"가 끝나는 지점을 보여주기 위한 임의의 목 데이터 총량
 CURATION_PLATFORMS = [
@@ -268,6 +269,7 @@ CURATION_PLATFORMS = [
     ("instagram", "인스타그램"),
     ("threads", "쓰레드"),
 ]
+CONTENT_RELATED_KEYWORDS_TOP_N = 4  # 콘텐츠 상세(CURATE-002)의 연관 키워드 태그 개수
 
 # --- 관리자 대시보드(ADMIN-001) 정책 (SRS FR-ADMIN-001) ---
 # 외부 연동은 API_Design.md §8 기준 전부 미구현이라, 가짜 호출량 대신 실제 상태를 그대로 보여준다.

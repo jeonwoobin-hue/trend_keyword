@@ -1,7 +1,7 @@
 """services/curation_service.py 단위 테스트 (functional-spec FR-CURATE-001, SRS FR-CURATE-003)."""
 
-from config.constants import CURATION_PAGE_SIZE, CURATION_TOTAL_MOCK_ITEMS
-from services.curation_service import add_scrap, get_curated_contents, remove_scrap
+from config.constants import CONTENT_RELATED_KEYWORDS_TOP_N, CURATION_PAGE_SIZE, CURATION_TOTAL_MOCK_ITEMS
+from services.curation_service import add_scrap, get_content_detail, get_curated_contents, remove_scrap
 
 
 def test_get_curated_contents_first_page_size_and_cursor():
@@ -115,3 +115,33 @@ def test_remove_scrap_filters_target_only():
     remaining = remove_scrap(scraps, first.content_id)
 
     assert remaining == [second]
+
+
+def test_get_content_detail_returns_matching_item():
+    content = get_curated_contents("패션", None).contents[0]
+
+    detail = get_content_detail(content.content_id, "패션")
+
+    assert detail is not None
+    assert detail.content_id == content.content_id
+    assert detail.title == content.title
+    assert len(detail.related_keywords) == CONTENT_RELATED_KEYWORDS_TOP_N
+
+
+def test_get_content_detail_unknown_id_returns_none():
+    assert get_content_detail("content_does_not_exist", "패션") is None
+
+
+def test_get_content_detail_requires_matching_keyword_context():
+    content = get_curated_contents("패션", None).contents[0]
+
+    assert get_content_detail(content.content_id, "여행") is None
+
+
+def test_get_content_detail_none_keyword_matches_default_feed():
+    content = get_curated_contents(None, None).contents[0]
+
+    detail = get_content_detail(content.content_id, None)
+
+    assert detail is not None
+    assert detail.content_id == content.content_id

@@ -70,8 +70,9 @@ else:
                 st.caption(f"{content.source} · {content.published_at:%Y-%m-%d}")
                 if not content.is_available:
                     st.caption(":red[원문을 찾을 수 없습니다.]")
-                elif st.button("원문 이동", key=f"content_open_{content.content_id}"):
-                    st.info("실제 원문 링크 연동 전 단계입니다.")
+                elif st.button("상세보기", key=f"content_detail_{content.content_id}"):
+                    st.session_state[SessionKeys.SELECTED_CONTENT_ID] = content.content_id
+                    st.switch_page("pages/15_📄_콘텐츠_상세.py")
             with scrap_col:
                 is_scrapped = content.content_id in scrapped_ids
                 label = "★ 스크랩됨" if is_scrapped else "☆ 스크랩"

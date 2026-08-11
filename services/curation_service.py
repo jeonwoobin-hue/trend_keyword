@@ -9,8 +9,13 @@
 
 from datetime import datetime, timedelta, timezone
 
-from config.constants import CURATION_PAGE_SIZE, CURATION_PLATFORMS, CURATION_TOTAL_MOCK_ITEMS
-from models.curation import ContentItem, CurationResult
+from config.constants import (
+    CONTENT_RELATED_KEYWORDS_TOP_N,
+    CURATION_PAGE_SIZE,
+    CURATION_PLATFORMS,
+    CURATION_TOTAL_MOCK_ITEMS,
+)
+from models.curation import ContentDetail, ContentItem, CurationResult
 
 _TITLE_TEMPLATES = [
     "{topic} 총정리",
@@ -25,6 +30,9 @@ _DEFAULT_TOPIC = "관심 키워드"
 
 # 이 배수번째 항목마다 원문이 삭제된 상태(RES_003)로 표시해 예외 UX를 시연한다.
 _UNAVAILABLE_EVERY_N = 7
+
+# 콘텐츠 상세(CURATE-002)의 연관 키워드 태그를 만드는 접미사 목록.
+_RELATED_KEYWORD_SUFFIXES = ["최신 소식", "추천", "리뷰 모음", "비교"]
 
 
 def get_curated_contents(
@@ -51,6 +59,32 @@ def get_curated_contents(
     return CurationResult(contents=page, next_cursor=next_cursor)
 
 
+def get_content_detail(content_id: str, keyword: str | None) -> ContentDetail | None:
+    """콘텐츠 1건의 상세(CURATE-002)를 조회한다. 없으면 `None`(RES_001).
+
+    Args:
+        content_id: 조회할 콘텐츠 ID.
+        keyword: 해당 콘텐츠가 속한 피드의 키워드 조건(`get_curated_contents()`와 동일한 값).
+            일반 피드에서 진입했다면 `None`.
+    """
+    topic = keyword or _DEFAULT_TOPIC
+    item = next((item for item in _build_mock_pool(topic) if item.content_id == content_id), None)
+    if item is None:
+        return None
+
+    return ContentDetail(
+        content_id=item.content_id,
+        title=item.title,
+        thumbnail=item.thumbnail,
+        source=item.source,
+        platform=item.platform,
+        published_at=item.published_at,
+        url=item.url,
+        is_available=item.is_available,
+        related_keywords=_build_related_keywords(topic),
+    )
+
+
 def add_scrap(existing: list[ContentItem], content: ContentItem) -> list[ContentItem]:
     """콘텐츠를 스크랩 목록에 추가한다 (FR-CURATE-003). 이미 있으면 그대로 반환한다."""
     if any(item.content_id == content.content_id for item in existing):
@@ -61,6 +95,11 @@ def add_scrap(existing: list[ContentItem], content: ContentItem) -> list[Content
 def remove_scrap(existing: list[ContentItem], content_id: str) -> list[ContentItem]:
     """스크랩 목록에서 콘텐츠를 제거한다."""
     return [item for item in existing if item.content_id != content_id]
+
+
+def _build_related_keywords(topic: str) -> list[str]:
+    """콘텐츠 상세(CURATE-002)의 연관 키워드 태그를 주제 기반으로 생성한다."""
+    return [f"{topic} {suffix}" for suffix in _RELATED_KEYWORD_SUFFIXES[:CONTENT_RELATED_KEYWORDS_TOP_N]]
 
 
 def _build_mock_pool(topic: str) -> list[ContentItem]:

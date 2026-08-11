@@ -24,6 +24,7 @@ def _default_session_values() -> dict:
         SessionKeys.CURATION_ACTIVE_KEYWORD: None,
         SessionKeys.CURATION_KEYWORD_FILTER: None,
         SessionKeys.CURATION_PLATFORM_FILTER: [],
+        SessionKeys.SELECTED_CONTENT_ID: None,
         SessionKeys.ADMIN_SPIKE_BATCH_STATUS: None,
         SessionKeys.ADMIN_USERS: None,
         SessionKeys.ADMIN_BLACKLIST: [],
@@ -50,6 +51,7 @@ _USER_SCOPED_KEYS = [
     SessionKeys.CURATION_CURSOR,
     SessionKeys.CURATION_ACTIVE_KEYWORD,
     SessionKeys.CURATION_PLATFORM_FILTER,
+    SessionKeys.SELECTED_CONTENT_ID,
     SessionKeys.NOTIFY_CHANNEL_PREFERENCE,
     SessionKeys.SCRAPPED_CONTENTS,
 ]

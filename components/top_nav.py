@@ -44,6 +44,7 @@ _NAV_GROUPS: list[tuple[str, str, list[_NavItem], bool]] = [
             ("인사이트 리포트", "pages/7_📰_인사이트_리포트.py"),
             ("리포트 상세", "pages/10_🗺️_리포트_상세.py"),
             ("콘텐츠 큐레이션", "pages/8_🎬_콘텐츠_큐레이션.py"),
+            ("콘텐츠 상세", "pages/15_📄_콘텐츠_상세.py"),
         ],
         False,
     ),

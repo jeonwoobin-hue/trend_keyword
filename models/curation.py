@@ -31,3 +31,19 @@ class CurationResult(BaseModel):
     next_cursor: str | None = Field(default=None, alias="nextCursor")
 
     model_config = {"populate_by_name": True}
+
+
+class ContentDetail(BaseModel):
+    """콘텐츠 상세(CURATE-002) 응답. `get_content_detail()` 반환 타입."""
+
+    content_id: str = Field(alias="contentId")
+    title: str
+    thumbnail: str
+    source: str
+    platform: str
+    published_at: datetime = Field(alias="publishedAt")
+    url: str
+    is_available: bool
+    related_keywords: list[str] = Field(alias="relatedKeywords")
+
+    model_config = {"populate_by_name": True}

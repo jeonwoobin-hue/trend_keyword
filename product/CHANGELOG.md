@@ -55,6 +55,11 @@
   관리자 역할 판별 방식(이메일 화이트리스트 임시 방식) 각주 추가. 요구사항 텍스트 자체는 변경 없음
 - `tests/services/test_auth_service.py`에 역할 판별 테스트 4건 추가, `python -m pytest -q` 91건
   전체 통과 확인
+- 콘텐츠 상세(CURATE-002) 구현 — 신규 `pages/15_📄_콘텐츠_상세.py`, `services/curation_service.py`에
+  `get_content_detail()` 추가(연관 키워드 태그는 주제 기반 목업), `models/curation.py`에
+  `ContentDetail` 모델 추가. `pages/8_콘텐츠_큐레이션` 카드의 "상세보기"에서 진입, 원문 이동·스크랩
+  제공(스크랩은 기존 마이페이지 목록과 연동). 상단 메뉴 인사이트 그룹에도 추가.
+  `TrendFit-ux-docs/ia.md` v1.3, `docs/Feature_Roadmap.md` 갱신, 테스트 4건 추가로 95건 전체 통과
 
 ## 2026-08-10
 
