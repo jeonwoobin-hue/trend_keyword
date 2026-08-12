@@ -46,6 +46,21 @@
   (`services/dashboard_service.py`, 상위 `RELATED_KEYWORDS_TOP_N`개). 실제 동시 언급 빈도 계산
   로직은 미정 — 외부 데이터 연동 시 확정할 것
 
+## 키워드 연관성 지도 — Network Graph (REPORT-002, FR-REPORT-003)
+
+- **정의**: 리포트에 표시되는 키워드 간 연결 관계(Network Graph). 서로 "관련 있다"고 보여줄 두
+  키워드를 정하는 기준
+- **계산식**: 두 키워드의 언급량 추이 시계열 간 피어슨 상관계수(`utils/statistics.
+  pearson_correlation()`, -1~1). 각 키워드를 그보다 먼저 그래프에 놓인 키워드 중 상관계수
+  절댓값이 가장 큰 것과 연결(트리 구조, 노드 N개당 엣지 N-1개 유지) — 엣지 가중치는 상관계수의
+  절댓값(0~1)
+- **산출 위치**: `services/report_service.py`의 `_build_network_graph()`
+- **엣지 케이스**: 어느 한쪽 시계열의 표준편차가 0(값이 전부 동일)이면 상관관계를 정의할 수 없어
+  0으로 처리(에러 아님 — Spike Score의 표준편차 0 처리와 같은 관례)
+- **미정 사항**: 지금은 `dashboard_service`의 목 언급량 시계열로 계산해 데이터 자체는 실제
+  동시 언급 관계를 반영하지 않는다. 실제 데이터 연동 시 계산식(피어슨 상관계수, 트리 구조 연결
+  방식)은 그대로 재사용 가능
+
 ## 유사 관심사 비교 추천 키워드 (REPORT-002, FR-REPORT-005)
 
 - **정의**: 관심 분야와 유사한 분야 그룹의 데이터를 비교하여 도출한 추가 추천 키워드
@@ -65,3 +80,4 @@
 | 2026-08-11 | 유사 관심사 비교 추천 키워드(FR-REPORT-005) 산정 방법 확정 — 고정 분야 매핑 기반 목 데이터 방식. 연관 키워드(DASH-002)의 기존 목 산정 방식도 함께 명시 | REPORT-002 구현(BL-005) |
 | 2026-08-12 | Spike Score의 "0~100 정규화" 방식을 시그모이드(`100/(1+e^-z)`)로 확정 — functional-spec.md는 정규화 함수를 specify하지 않아 직접 결정. `services/spike_score_service.py`로 계산식 실제 구현, `dashboard_service`가 목 언급량 시계열에 적용 | Spike Score 산출 로직 구현 |
 | 2026-08-11 | 연령·성별 관심도 가중치 보정(FR-DASH-005) 산정 방법 확정 — 그룹별 무작위 정규화 목 데이터 방식 | DASH-002 구현(BL-003) |
+| 2026-08-12 | 키워드 연관성 지도(Network Graph, FR-REPORT-003) 연결 기준 확정 — 언급량 추이 시계열 간 피어슨 상관계수, 상관 절댓값이 가장 큰 키워드와 연결하는 트리 구조. `utils/statistics.pearson_correlation()`로 구현 | Network Graph 실제 로직 구현 |

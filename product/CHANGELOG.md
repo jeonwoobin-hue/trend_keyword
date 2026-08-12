@@ -2,6 +2,19 @@
 
 날짜순으로 기록합니다 (최신이 위).
 
+## 2026-08-12 (9)
+
+- 인사이트 리포트의 키워드 연관성 지도(Network Graph, FR-REPORT-003) 연결 로직을 실제 계산으로
+  교체. 기존엔 노드 연결이 완전히 랜덤 트리였음 — `utils/statistics.pearson_correlation()`(신규,
+  공통 통계 유틸)로 언급량 추이 시계열 간 피어슨 상관계수를 구하고, 각 키워드를 상관 절댓값이
+  가장 큰 키워드와 연결(`report_service._build_network_graph()`). 그래프 구조(노드 N개, 엣지
+  N-1개 트리)는 그대로 유지.
+- `docs/KPI_Definitions.md`에 "키워드 연관성 지도" 항목 신설, 계산식·엣지 케이스(표준편차 0 →
+  상관관계 0)·미정 사항 기록.
+- 이슈 요약(FR-REPORT-002)은 이번엔 손대지 않음 — 실제 AI 생성으로 바꾸려면 LLM API 연동이
+  새로 필요해 별도로 진행하기로 함.
+- `tests/utils/test_statistics.py` 신규 작성. 전체 테스트 128건 통과.
+
 ## 2026-08-12 (8)
 
 - Spike Score(FR-DASH-003) 산출 로직을 실제로 구현. `services/spike_score_service.

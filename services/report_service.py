@@ -1,15 +1,19 @@
 """인사이트 리포트 생성 도메인 로직 (functional-spec FR-REPORT-001/002/003, SRS FR-REPORT-005).
 
-실제 이슈 요약(AI)·Word Cloud·Network Graph 산출 로직이 붙기 전까지, 이 모듈은
-`dashboard_service`의 키워드 데이터를 재사용해 목(mock) 리포트를 생성한다. 실제 연동 시
-`generate_report()` 내부만 교체하고 시그니처/반환 타입(`Report`)은 유지한다.
+실제 이슈 요약(AI) 산출 로직이 붙기 전까지, `_build_summary()`는 상위 키워드를 언급하는 고정
+템플릿 문장을 생성한다. 실제 연동 시 `generate_report()` 내부만 교체하고 시그니처/반환 타입
+(`Report`)은 유지한다.
+
+키워드 연관성 지도(FR-REPORT-003)의 Network Graph는 `utils/statistics.pearson_correlation()`로
+언급량 추이 시계열 간 상관관계를 실제로 계산해 연결한다(docs/KPI_Definitions.md 참고) — 노드는
+여전히 목 데이터(`dashboard_service`의 시계열)이지만, 어떤 키워드끼리 연결되는지는 그 데이터에서
+정직하게 산출된다.
 
 유사 관심사 비교 추천(FR-REPORT-005)은 실제 사용자 행동 기반 유사도 클러스터링 전까지,
 `config.SIMILAR_CATEGORIES`의 고정 매핑으로 "유사 분야"를 정의한다. 산정 방법은
 docs/KPI_Definitions.md와 일치시킬 것.
 """
 
-import random
 import uuid
 from datetime import datetime, timezone
 
@@ -25,6 +29,7 @@ from config.constants import (
 from models.dashboard import TrendKeyword
 from models.report import NetworkEdge, NetworkGraph, NetworkNode, Report, WordCloudItem
 from services.dashboard_service import get_dashboard_keywords
+from utils.statistics import pearson_correlation
 
 _CATEGORY_LABELS = dict(CATEGORIES)
 
@@ -108,17 +113,29 @@ def _build_word_cloud(keywords: list[TrendKeyword]) -> list[WordCloudItem]:
 
 
 def _build_network_graph(keywords: list[TrendKeyword]) -> NetworkGraph:
-    """상위 키워드를 노드로, 임의의 트리 구조 연결을 엣지로 구성한다."""
+    """상위 키워드를 노드로, 언급량 추이 상관관계가 가장 높은 키워드끼리 연결한다.
+
+    각 키워드를 그보다 먼저 놓인 키워드들 중 언급량 시계열이 가장 비슷하게 움직인(피어슨
+    상관계수 절댓값이 가장 큰) 것과 연결한다 — 트리 구조(노드 N개에 엣지 N-1개)는 유지하되,
+    "어디에 연결할지"를 실제 데이터로 정한다(docs/KPI_Definitions.md 참고).
+    """
     top = keywords[:NETWORK_GRAPH_NODE_TOP_N]
     nodes = [NetworkNode(id=k.keyword_id, label=k.keyword) for k in top]
+    series = {k.keyword_id: [point.mention_count for point in k.trend_graph] for k in top}
 
-    rng = random.Random(f"network:{','.join(k.keyword_id for k in top)}")
-    edges = [
-        NetworkEdge(
-            source=top[rng.randint(0, index - 1)].keyword_id,
-            target=top[index].keyword_id,
-            weight=round(rng.uniform(0.2, 1.0), 2),
+    edges = []
+    for index in range(1, len(top)):
+        candidates = top[:index]
+        best_candidate = max(
+            candidates,
+            key=lambda candidate: abs(pearson_correlation(series[top[index].keyword_id], series[candidate.keyword_id])),
         )
-        for index in range(1, len(top))
-    ]
+        correlation = pearson_correlation(series[top[index].keyword_id], series[best_candidate.keyword_id])
+        edges.append(
+            NetworkEdge(
+                source=best_candidate.keyword_id,
+                target=top[index].keyword_id,
+                weight=round(abs(correlation), 2),
+            )
+        )
     return NetworkGraph(nodes=nodes, edges=edges)
