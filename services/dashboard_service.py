@@ -5,6 +5,10 @@ functional-spec.md FR-DASH-001/FR-DASH-004, SRS FR-DASH-005 응답 계약과 동
 목(mock) 데이터를 생성한다. 실제 연동 시 내부 구현만 실제 API 클라이언트 호출로 교체하고,
 공개 함수의 시그니처와 반환 타입(`DashboardKeywordsResult`, `KeywordDetail`)은 유지한다.
 
+Spike Score(FR-DASH-003)는 `services/spike_score_service.calculate_spike_score()`로 실제
+산출 공식을 적용한다 — 언급량 시계열 자체는 아직 목 데이터이지만, 점수는 그 시계열로부터
+문서화된 계산식(docs/KPI_Definitions.md)대로 정직하게 계산된다(난수 아님).
+
 연령·성별 관심도 가중치 보정(FR-DASH-005)은 실제 데이터 소스 미확보로 산정 방법이 미정이라
 (docs/KPI_Definitions.md 참고), 그룹별 상대 비중만 무작위로 생성해 보여준다.
 """
@@ -20,6 +24,10 @@ from config.constants import (
     DEMOGRAPHIC_GENDERS,
     RELATED_KEYWORDS_TOP_N,
     SENTIMENT_MIN_MENTION_COUNT,
+    SPIKE_KEYWORD_PROBABILITY,
+    SPIKE_MULTIPLIER_RANGE,
+    TREND_BASELINE_RANGE,
+    TREND_NOISE_RATIO,
 )
 from models.dashboard import (
     DashboardKeywordsResult,
@@ -30,6 +38,7 @@ from models.dashboard import (
     TrendKeyword,
     TrendPoint,
 )
+from services.spike_score_service import calculate_spike_score
 
 # 카테고리별 (keyword_id, keyword) 목 데이터 풀. CATEGORIES(config/constants.py)와 키가 일치해야 한다.
 _MOCK_KEYWORD_POOLS: dict[str, list[tuple[str, str]]] = {
@@ -263,7 +272,7 @@ def _build_mock_keywords(category: str, period: str) -> list[TrendKeyword]:
                 keyword=name,
                 category=category,
                 mention_count=trend_graph[-1].mention_count,
-                spike_score=round(rng.uniform(10, 99), 1),
+                spike_score=calculate_spike_score([point.mention_count for point in trend_graph]),
                 trend_graph=trend_graph,
             )
         )
@@ -312,5 +321,19 @@ def _build_demographic_weights(rng: random.Random, group_ids: list[str]) -> dict
 
 
 def _generate_trend_points(rng: random.Random, period: str) -> list[TrendPoint]:
-    """기간별 라벨에 맞는 언급량 추이 포인트를 생성한다."""
-    return [TrendPoint(label=label, mention_count=rng.randint(500, 50_000)) for label in _PERIOD_LABELS[period]]
+    """기간별 라벨에 맞는 언급량 추이 포인트를 생성한다.
+
+    포인트마다 완전히 독립된 난수 대신, 키워드별 기준선(baseline)에 자연스러운 변동을 준 시계열을
+    만든다 — Spike Score(services/spike_score_service)가 이 시계열의 평균·표준편차로 실제
+    계산되므로, 값들이 서로 무관하면 계산식이 있어도 결과가 여전히 난수와 다를 바 없어진다.
+    일부 키워드는 당일(마지막 포인트)에 실제로 급상승한 것처럼 배수를 곱해, 급상승/평상시 키워드가
+    Spike Score로 실제 구분되는 것을 보여준다.
+    """
+    labels = _PERIOD_LABELS[period]
+    baseline = rng.randint(*TREND_BASELINE_RANGE)
+    counts = [max(0, round(rng.gauss(baseline, baseline * TREND_NOISE_RATIO))) for _ in labels]
+
+    if rng.random() < SPIKE_KEYWORD_PROBABILITY:
+        counts[-1] = round(counts[-1] * rng.uniform(*SPIKE_MULTIPLIER_RANGE))
+
+    return [TrendPoint(label=label, mention_count=count) for label, count in zip(labels, counts)]

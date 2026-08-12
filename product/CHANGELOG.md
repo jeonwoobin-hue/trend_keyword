@@ -2,6 +2,27 @@
 
 날짜순으로 기록합니다 (최신이 위).
 
+## 2026-08-12 (8)
+
+- Spike Score(FR-DASH-003) 산출 로직을 실제로 구현. `services/spike_score_service.
+  calculate_spike_score()`가 언급량 시계열에서 `(당일 − lookback 이동평균) ÷ lookback 표준편차`
+  z-score를 구하고 시그모이드로 0~100에 정규화 — functional-spec.md가 정규화 함수를 명시하지
+  않아 시그모이드로 확정(docs/KPI_Definitions.md 변경 이력에 근거 기록). 표준편차 0 엣지 케이스는
+  문서대로 0점 처리.
+- `services/dashboard_service.py`의 목 언급량 시계열 생성 방식도 함께 손봄 — 기존엔 그래프의 각
+  포인트가 완전히 독립된 난수라 계산식을 붙여도 무의미했음. 키워드별 기준선(baseline) + 자연스러운
+  변동으로 바꾸고, 약 15%의 키워드는 당일 값에 배수(1.15~1.8배)를 곱해 실제 급상승처럼 연출
+  (`config.constants`의 `TREND_BASELINE_RANGE`/`TREND_NOISE_RATIO`/`SPIKE_KEYWORD_PROBABILITY`/
+  `SPIKE_MULTIPLIER_RANGE`). 처음엔 배수를 2~4.5배로 뒀더니 시그모이드가 곧바로 포화돼 대시보드
+  상위 20개가 전부 100.0으로 보여서(실제 브라우저로 확인 후 발견) 배수·비율을 낮춰 점수 차이가
+  자연스럽게 드러나도록 조정. 결과적으로 대시보드의 Spike Score 정렬이 실제로 "급상승한 키워드가
+  위로 온다"는 의미를 가짐.
+- 데이터 자체(언급량 시계열)는 여전히 목업이지만, **계산 로직은 실제 산식**이라 외부 데이터 연동
+  시 입력만 실제 API 응답으로 갈아끼우면 됨 — `worker/jobs`(매시간 배치)·ADMIN-001 수동 재계산은
+  아직 없음, 지금은 대시보드 응답 생성 시 즉시 계산.
+- `tests/services/test_spike_score_service.py` 신규 작성(경계값·엣지 케이스·결정성 포함). 전체
+  테스트 120건 통과.
+
 ## 2026-08-12 (7)
 
 - **프론트엔드 배포 확정**: Streamlit Community Cloud, `https://trend-keyword.streamlit.app/`.

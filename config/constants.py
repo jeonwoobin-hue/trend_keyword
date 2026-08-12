@@ -132,6 +132,15 @@ DEFAULT_PERIOD = "1w"
 DASHBOARD_TOP_N = 20  # functional-spec FR-DASH-001: 언급량·Spike Score 기준 상위 20개 반환
 DASHBOARD_CACHE_TTL_SECONDS = 3600  # NFR-PERF-002: 최대 1시간 이내 데이터 반영
 
+# --- Spike Score(FR-DASH-003) 목 언급량 시계열 생성 정책 ---
+# 실제 언급량 데이터가 없어 아래 값으로 시계열을 만들지만, Spike Score 자체는
+# services/spike_score_service.calculate_spike_score()로 그 시계열에서 정직하게 계산한다.
+TREND_BASELINE_RANGE = (2_000, 20_000)  # 키워드별 평상시 언급량 기준선 범위
+TREND_NOISE_RATIO = 0.15  # 기준선 대비 자연스러운 변동 폭(표준편차 비율)
+SPIKE_KEYWORD_PROBABILITY = 0.15  # 당일 실제로 "급상승"하는 것처럼 연출할 키워드 비율
+SPIKE_MULTIPLIER_RANGE = (1.15, 1.8)  # 급상승 연출 시 당일 값에 곱할 배수 범위 — 시그모이드가
+# 곧바로 포화(100.0)되지 않고 점수 차이가 보이도록 완만한 배수로 조정(2026-08-12)
+
 # --- 키워드 상세(DASH-002) 데이터 정책 (functional-spec FR-DASH-004) ---
 RELATED_KEYWORDS_TOP_N = 10  # "연관 키워드 Top 10" 명시
 # 언급량이 이 값 미만이면 감성분석 데이터 부족(VALID_003)으로 간주해 해당 영역을 비활성화한다.

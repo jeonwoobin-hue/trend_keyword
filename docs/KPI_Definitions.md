@@ -7,9 +7,16 @@
 ## Spike Score (급상승 지수)
 
 - **정의**: 키워드의 검색량·언급량이 평상시 대비 급증한 정도를 0~100으로 정규화한 지수
-- **계산식**: `(당일 언급량 − lookbackWindow 이동평균) ÷ lookbackWindow 표준편차`를 0~100 스케일로 정규화
-- **lookbackWindow**: `7d`(기본값) 또는 `30d` — 배치 요청 시 지정
-- **산출 주기**: 매시간 배치(스케줄러) + 관리자 수동 재계산(ADMIN-001)
+- **계산식**: `(당일 언급량 − lookbackWindow 이동평균) ÷ lookbackWindow 표준편차`(z-score)를
+  시그모이드(`100 / (1 + e^-z)`)로 0~100에 정규화. z=0(평상시와 동일)이면 50점, 급증할수록
+  100에, 급감할수록 0에 가까워짐 — `services/spike_score_service.calculate_spike_score()`로
+  구현·검증됨(`tests/services/test_spike_score_service.py`)
+- **lookbackWindow**: `7d`(기본값) 또는 `30d` — 배치 요청 시 지정. 지금은 실제 배치 전이라
+  `dashboard_service`가 화면에 쓰는 목 언급량 시계열 전체를 그대로 lookback으로 사용(마지막
+  포인트가 "당일", 나머지가 lookback)
+- **산출 주기**: 매시간 배치(스케줄러) + 관리자 수동 재계산(ADMIN-001) — **배치 워커(worker/jobs)
+  자체는 아직 없음**. 지금은 `services/dashboard_service.py`가 대시보드 응답을 만들 때마다
+  계산식만 즉시 적용하는 상태(공식은 진짜, 배치 인프라는 목업)
 - **엣지 케이스**:
   - 표준편차가 0인 키워드 → Spike Score **0**으로 정상 처리(에러 아님, 결측 아님)
   - 원본 데이터 수집 실패 등 이상치는 필터링 후 결측 처리, 이전 캐시된 점수 유지
@@ -56,4 +63,5 @@
 |---|---|---|
 | 2026-08-10 | 문서 최초 작성 — functional-spec.md FR-DASH-003 기준 Spike Score 정의, 나머지 지표는 미정으로 표시 | 프로젝트 초기 세팅 |
 | 2026-08-11 | 유사 관심사 비교 추천 키워드(FR-REPORT-005) 산정 방법 확정 — 고정 분야 매핑 기반 목 데이터 방식. 연관 키워드(DASH-002)의 기존 목 산정 방식도 함께 명시 | REPORT-002 구현(BL-005) |
+| 2026-08-12 | Spike Score의 "0~100 정규화" 방식을 시그모이드(`100/(1+e^-z)`)로 확정 — functional-spec.md는 정규화 함수를 specify하지 않아 직접 결정. `services/spike_score_service.py`로 계산식 실제 구현, `dashboard_service`가 목 언급량 시계열에 적용 | Spike Score 산출 로직 구현 |
 | 2026-08-11 | 연령·성별 관심도 가중치 보정(FR-DASH-005) 산정 방법 확정 — 그룹별 무작위 정규화 목 데이터 방식 | DASH-002 구현(BL-003) |
