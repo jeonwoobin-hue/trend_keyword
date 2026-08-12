@@ -223,11 +223,15 @@ SOCIAL_PROVIDERS = [
     ("kakao", "카카오"),
 ]
 
-# --- 앱 기본 URL (OAuth redirect_to 등에 사용) ---
-# 배포 인프라가 아직 확정되지 않아(CLAUDE.md §6) 로컬 개발 기준값이다. 실제 배포 도메인이
-# 정해지면 이 값과 Supabase Authentication → URL Configuration의 Redirect URLs를 함께 갱신할 것
-# (REPORT_SHARE_LINK_BASE_URL과 같은 성격의 "실제 배포 전 임시값").
-APP_BASE_URL = "http://localhost:8501"
+# 카카오는 Supabase 기본 동의항목에 account_email이 포함되는데, 비즈니스 인증 없는 앱은 이메일
+# 동의항목 자체를 요청할 권한이 없어(카카오 개발자 콘솔 "권한 없음") 즉시 KOE205로 거부된다.
+# 이메일 없이도 로그인되도록 이미 설계돼 있어(services/auth_service.complete_social_login),
+# 승인 없이 바로 쓸 수 있는 닉네임/프로필 사진만 요청한다.
+KAKAO_OAUTH_SCOPES = "profile_nickname profile_image"
+
+# 앱 배포 URL(OAuth redirect_to 등에 사용)은 로컬/Streamlit Cloud마다 달라 config/secrets.py의
+# get_app_base_url()에서 secrets.toml [app] base_url로 관리한다(환경별로 다른 값이라 여기 상수로
+# 고정하지 않음). Supabase Authentication → URL Configuration의 Redirect URLs도 함께 갱신할 것.
 
 # --- 인사이트 리포트(REPORT-001) 정책 (functional-spec FR-REPORT-001) ---
 MAX_REPORT_TITLE_LENGTH = 50  # 미입력 시 자동 생성

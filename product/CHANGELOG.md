@@ -2,6 +2,24 @@
 
 날짜순으로 기록합니다 (최신이 위).
 
+## 2026-08-12 (7)
+
+- **프론트엔드 배포 확정**: Streamlit Community Cloud, `https://trend-keyword.streamlit.app/`.
+  사용자가 이미 로컬과 별개로 배포해 테스트 중이었다는 걸 소셜 로그인 디버깅 도중 발견 — 그동안
+  로컬 기준으로만 안내하고 있었음.
+- 카카오 소셜 로그인 KOE205(잘못된 요청) 원인 확인: "카카오계정(이메일)" 동의항목이 비즈니스 인증
+  없는 앱엔 "권한 없음" 상태라 요청 자체가 거부됨. `KAKAO_OAUTH_SCOPES`(`profile_nickname
+  profile_image`)로 요청 범위를 좁혀 이메일 없이 로그인하도록 조정(`complete_social_login`은
+  이미 이메일이 없을 때 `{user_id}@social.trendfit`로 대체하게 설계되어 있어 추가 변경 불필요).
+- **`APP_BASE_URL`을 상수에서 시크릿으로 이동**: 로컬(`http://localhost:8501`)과 배포
+  (`https://trend-keyword.streamlit.app`)가 서로 다른 URL을 쓰는데 코드에 하드코딩돼 있던 게
+  배포본에서 OAuth가 안 되는 근본 원인 중 하나였음. `config/secrets.py`에 `get_app_base_url()`
+  추가(secrets.toml `[app] base_url`, 없으면 로컬 기본값). Streamlit Cloud는 대시보드 Settings →
+  Secrets에 넣은 내용을 플랫폼이 그대로 `.streamlit/secrets.toml` 파일로 만들어주므로, 기존
+  파일 기반 로더가 로컬/배포 어디서나 동일하게 동작함.
+- [ops/Deployment.md](../ops/Deployment.md)에 Streamlit Cloud Secrets 설정 확인 항목, 배포 URL을
+  Supabase Redirect URLs에 추가해야 한다는 점 정리. 전체 테스트 111건 통과.
+
 ## 2026-08-12 (6)
 
 - 소셜 로그인(FR-AUTH-002) 대시보드 설정 완료. Google Cloud Console에 TrendFit 전용 OAuth 클라이언트

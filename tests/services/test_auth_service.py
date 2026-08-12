@@ -438,6 +438,28 @@ def test_get_social_login_url_embeds_provider_and_challenge(monkeypatch):
     assert verifier not in url  # URL에는 challenge(해시값)만 담기고 verifier 원문은 없어야 한다
 
 
+def test_get_social_login_url_without_scopes_omits_scopes_param(monkeypatch):
+    monkeypatch.setattr(
+        auth_service, "get_secret_section", lambda _section: {"url": "https://proj.supabase.co"}
+    )
+
+    url, _ = get_social_login_url("google", "http://localhost:8501/로그인")
+
+    assert "scopes=" not in url
+
+
+def test_get_social_login_url_with_scopes_includes_them(monkeypatch):
+    monkeypatch.setattr(
+        auth_service, "get_secret_section", lambda _section: {"url": "https://proj.supabase.co"}
+    )
+
+    url, _ = get_social_login_url(
+        "kakao", "http://localhost:8501/로그인", scopes="profile_nickname profile_image"
+    )
+
+    assert "scopes=profile_nickname" in url
+
+
 def test_get_social_login_url_different_calls_produce_different_verifiers(monkeypatch):
     monkeypatch.setattr(
         auth_service, "get_secret_section", lambda _section: {"url": "https://proj.supabase.co"}

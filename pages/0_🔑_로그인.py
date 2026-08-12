@@ -4,7 +4,8 @@ import streamlit as st
 
 from app.session import init_session_state
 from components.top_nav import render_top_nav
-from config.constants import APP_BASE_URL, SessionKeys, SOCIAL_PROVIDERS, WidgetKeys
+from config.constants import KAKAO_OAUTH_SCOPES, SessionKeys, SOCIAL_PROVIDERS, WidgetKeys
+from config.secrets import get_app_base_url
 from services.auth_service import AuthError, complete_social_login, get_social_login_url, login
 
 st.set_page_config(page_title="로그인 - TrendFit", page_icon="🔑", layout="wide")
@@ -23,7 +24,7 @@ def _next_page_after_login() -> str:
 
 def _oauth_redirect_to() -> str:
     """소셜 로그인이 끝난 뒤 Supabase가 되돌아올 이 페이지의 URL."""
-    return f"{APP_BASE_URL}/로그인"
+    return f"{get_app_base_url()}/로그인"
 
 
 # --- OAuth 리다이렉트 콜백 처리 ---
@@ -79,9 +80,12 @@ st.divider()
 
 social_col1, social_col2 = st.columns(2)
 social_columns = {SOCIAL_PROVIDERS[0][0]: social_col1, SOCIAL_PROVIDERS[1][0]: social_col2}
+_oauth_scopes = {"kakao": KAKAO_OAUTH_SCOPES}
 _verifiers = {}
 for provider_id, provider_label in SOCIAL_PROVIDERS:
-    login_url, code_verifier = get_social_login_url(provider_id, _oauth_redirect_to())
+    login_url, code_verifier = get_social_login_url(
+        provider_id, _oauth_redirect_to(), scopes=_oauth_scopes.get(provider_id)
+    )
     _verifiers[provider_id] = code_verifier
     with social_columns[provider_id]:
         st.link_button(f"{provider_label}로 로그인", login_url, use_container_width=True)

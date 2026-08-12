@@ -1,11 +1,19 @@
 # Deployment.md — 배포 가이드
 
 > SRS §2.3 운영 환경: 클라우드 인프라(컨테이너 기반), Streamlit/Dash 애플리케이션 서버 + 별도 배치 서버.
-> 인프라가 아직 확정되지 않아 템플릿 상태입니다. 실제 배포 환경이 정해지면 각 항목을 채웁니다.
+> 프론트엔드는 Streamlit Community Cloud(`https://trend-keyword.streamlit.app/`)로 확정(2026-08-12).
+> `api/`(FastAPI)·`worker/`(배치)의 인프라는 아직 미확정입니다.
 
 ## 배포 대상
 
-- [ ] 프론트엔드(Streamlit 앱)
+- [x] 프론트엔드(Streamlit 앱) — Streamlit Community Cloud, `https://trend-keyword.streamlit.app/`
+  (2026-08-12). **배포본이 로컬과 다르게 동작하면 아래부터 확인**:
+  - [ ] Streamlit Cloud 대시보드 **Settings → Secrets**에 로컬 `.streamlit/secrets.toml`과 동일한
+    내용이 들어있는지(플랫폼이 이 값을 그대로 `.streamlit/secrets.toml` 파일로 만들어주므로
+    `config/secrets.py`가 로컬과 동일하게 동작함) — `[app] base_url`은 로컬과 달리 실제 배포 URL
+    (`https://trend-keyword.streamlit.app`)로 넣어야 함
+  - [ ] `ImportError`/`ModuleNotFoundError`가 뜨면 대개 배포본이 최신 커밋을 아직 못 받아온
+    상태 — 대시보드에서 **Reboot app**으로 강제 재기동
 - [ ] 백엔드 API(FastAPI)
 - [ ] 배치 워커(스케줄러)
 - [x] DB(Supabase/PostgreSQL — 2026-08-11 확정, 2026-08-12 연결+검증 완료. 전용 프로젝트가 아니라
@@ -35,21 +43,31 @@
       (`https://qyqahxckbzbvrvtqdbdi.supabase.co/auth/v1/callback`)으로 등록(2026-08-12)
     - [x] Supabase Authentication → Providers에서 Google/Kakao 활성화 + Client ID/Secret 등록,
       → URL Configuration → Redirect URLs에 `http://localhost:8501/로그인` 추가(2026-08-12).
-      배포 도메인이 정해지면 그 URL도 추가하고 `config.constants.APP_BASE_URL` 갱신 필요
-    - [x] 실제 authorize URL을 브라우저로 왕복해 구글/카카오 각자의 실제 로그인 화면까지 뜨는 것
-      확인(2026-08-12) — 계정 비밀번호 입력 후 최종 로그인 완료는 사용자가 직접 테스트 필요
-      (구글/카카오 비밀번호는 대신 입력할 수 없음)
+      **배포 URL(`https://trend-keyword.streamlit.app/로그인`)도 같은 목록에 추가해야 함** — 앱의
+      `redirect_to`는 `config/secrets.py.get_app_base_url()`이 secrets.toml `[app] base_url`에서
+      읽으므로, Streamlit Cloud Secrets에 이 값을 배포 URL로 설정해야 배포본에서도 맞게 동작함
+    - [x] 카카오 동의항목(Kakao Developers → 카카오 로그인 → 동의항목) 중 "카카오계정(이메일)"은
+      비즈니스 인증 없는 앱엔 권한 자체가 없어("권한 없음") 요청 시 KOE205로 거부됨을 발견
+      (2026-08-12). 이메일 없이도 로그인되도록 이미 설계돼 있어(`complete_social_login`이 이메일
+      없으면 `{user_id}@social.trendfit`로 대체), 닉네임/프로필 사진만 요청하도록
+      `config.constants.KAKAO_OAUTH_SCOPES`로 범위를 좁힘. 나중에 이메일이 꼭 필요해지면 카카오
+      "추가 기능 신청"으로 승인받아야 함
+    - [ ] 실제 로그인 완료(비밀번호 입력)는 배포 URL 기준으로 아직 검증 중 — 로컬에선 사용자가
+      직접 테스트 가능한 부분까지 확인했으나(구글/카카오 비밀번호는 대신 입력할 수 없음), 배포
+      URL을 Redirect URLs에 추가한 뒤 배포본에서 재확인 필요
   - [ ] Resend 발신 도메인 검증(실제 서비스 오픈 전 — 지금은 `onboarding@resend.dev`로만 발송 가능)
 
 ## 환경변수/시크릿 체크리스트
 
-시크릿 값 자체는 절대 이 문서나 git에 커밋하지 않습니다 — 실제 값은 각 환경(로컬 `.streamlit/secrets.toml`,
-배포 환경의 시크릿 매니저)에만 보관합니다.
+시크릿 값 자체는 절대 이 문서나 git에 커밋하지 않습니다 — 실제 값은 각 환경(로컬
+`.streamlit/secrets.toml`, Streamlit Cloud는 대시보드 Settings → Secrets — 플랫폼이 동일 경로에
+파일로 만들어줘서 로컬과 같은 `config/secrets.py` 로더가 그대로 동작함)에만 보관합니다.
 
 | 항목 | 용도 | 위치(로컬 기준) |
 |---|---|---|
 | 외부 트렌드/소셜/뉴스 API 키 | [docs/API_Design.md](../docs/API_Design.md) §8 연동 현황 참고 | `.streamlit/secrets.toml` |
 | DB 접속 정보 | Supabase 등 | `.streamlit/secrets.toml` |
+| 앱 배포 URL(`[app] base_url`) | OAuth `redirect_to` 등 (`config.secrets.get_app_base_url()`) | `.streamlit/secrets.toml` — 환경마다 값이 다름(로컬 `http://localhost:8501`, Streamlit Cloud는 실제 배포 URL) |
 | JWT 시크릿 | 인증 토큰 서명 | 환경변수 |
 | OAuth 클라이언트 ID/Secret | 구글/카카오 소셜 로그인 | Supabase 대시보드(Authentication → Providers)에 직접 저장 — 앱 코드/secrets.toml에는 없음 |
 | 이메일 발송(Resend SMTP) 자격증명 | 회원가입/비밀번호 재설정 인증 메일(Supabase Auth 내장 발송) | Supabase 대시보드(Authentication → Emails → SMTP Settings)에 직접 저장 — 앱 코드/secrets.toml에는 없음 |

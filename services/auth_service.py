@@ -271,25 +271,32 @@ def delete_account(user_id: str) -> None:
         raise AuthError("SERVER_005", "회원 탈퇴 처리에 실패했습니다. 잠시 후 다시 시도해주세요.") from error
 
 
-def get_social_login_url(provider: str, redirect_to: str) -> tuple[str, str]:
+def get_social_login_url(provider: str, redirect_to: str, scopes: str | None = None) -> tuple[str, str]:
     """소셜 로그인(FR-AUTH-002) 시작 URL과 그에 대응하는 PKCE `code_verifier`를 만든다.
 
     `code_verifier`는 호출부가 `st.session_state`에 저장해뒀다가, Supabase가 `redirect_to`로
     되돌려줄 때 함께 오는 `?code=`와 짝지어 `complete_social_login()`에 넘겨야 한다.
+
+    `scopes`를 지정하지 않으면 Supabase가 프로바이더별 기본 동의항목을 요청한다 — 카카오는
+    기본값에 `account_email`이 포함되는데, 비즈니스 인증 없는 앱은 이 동의항목 자체를 요청할 권한이
+    없어(카카오 개발자 콘솔에 "권한 없음"으로 표시) 요청 즉시 KOE205로 거부된다. 이메일 없이도
+    로그인이 되도록 이미 설계돼 있으므로(`complete_social_login`), 카카오는 호출부에서 닉네임/
+    프로필 사진만 요청하도록 좁혀서 넘긴다.
     """
     verifier = generate_pkce_verifier()
     challenge = generate_pkce_challenge(verifier)
     challenge_method = "plain" if verifier == challenge else "s256"
 
     base_url = get_secret_section("supabase")["url"].rstrip("/")
-    query = urlencode(
-        {
-            "provider": provider,
-            "redirect_to": redirect_to,
-            "code_challenge": challenge,
-            "code_challenge_method": challenge_method,
-        }
-    )
+    params = {
+        "provider": provider,
+        "redirect_to": redirect_to,
+        "code_challenge": challenge,
+        "code_challenge_method": challenge_method,
+    }
+    if scopes:
+        params["scopes"] = scopes
+    query = urlencode(params)
     return f"{base_url}/auth/v1/authorize?{query}", verifier
 
 
