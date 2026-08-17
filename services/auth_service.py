@@ -127,7 +127,7 @@ def request_signup_verification(
 
     client = create_supabase_client()
     try:
-        client.auth.sign_up({"email": normalized_email, "password": password})
+        response = client.auth.sign_up({"email": normalized_email, "password": password})
     except AuthApiError as error:
         # Supabase는 형식은 맞지만 실제로 받을 수 없다고 판단한 이메일(예: example.com 같은 예약
         # 도메인)도 email_address_invalid로 거부한다 — 로컬 정규식 검사(is_valid_email)로는
@@ -137,6 +137,14 @@ def request_signup_verification(
         if error.code == "user_already_exists":
             raise AuthError("VALID_003", "이미 가입된 이메일입니다.") from error
         raise AuthError("SERVER_005", "가입 요청을 처리하지 못했습니다. 잠시 후 다시 시도해주세요.") from error
+
+    # 이미 가입(확인)된 이메일로 재가입을 시도해도 Supabase는 에러를 던지지 않고 성공 응답을
+    # 준다 — 이메일 존재 여부가 외부에 노출되지 않도록 하는 의도적인 보안 설계라, 이메일을 실제로
+    # 발송하지도 않는다(그래서 화면엔 "인증번호를 보냈습니다"가 뜨는데 정작 메일은 안 오는 문제가
+    # 있었음). `identities`가 빈 리스트인 것으로 이 상태를 구분한다(Supabase 커뮤니티에 알려진
+    # 동작 — 신규 가입은 identities에 최소 1건이 채워짐).
+    if response.user is not None and not response.user.identities:
+        raise AuthError("VALID_003", "이미 가입된 이메일입니다.")
 
 
 def complete_signup(email: str, verification_code: str) -> tuple[AuthUser, AuthSession]:

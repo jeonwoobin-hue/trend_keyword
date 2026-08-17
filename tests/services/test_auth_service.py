@@ -84,8 +84,10 @@ def _patch_client(monkeypatch, client: _FakeClient) -> None:
     monkeypatch.setattr(auth_service, "create_supabase_client", lambda access_token=None: client)
 
 
-def _fake_auth_response(user_id: str = "uuid-1", email: str = "trend.fit@example.com"):
-    user = SimpleNamespace(id=user_id, email=email)
+def _fake_auth_response(user_id: str = "uuid-1", email: str = "trend.fit@example.com", identities=None):
+    # identities는 실제 신규 가입이면 최소 1건 채워지고, 이미 가입된(확인된) 이메일로 재가입을
+    # 시도한 경우엔 Supabase가 에러 없이 빈 리스트로 응답한다(request_signup_verification 참고).
+    user = SimpleNamespace(id=user_id, email=email, identities=["email"] if identities is None else identities)
     session = SimpleNamespace(access_token="access-token", refresh_token="refresh-token")
     return SimpleNamespace(user=user, session=session)
 
@@ -160,7 +162,8 @@ def test_login_invalid_email_format_raises_valid_002():
 
 
 def test_request_signup_verification_success_returns_none(monkeypatch):
-    client = _FakeClient(auth=_FakeAuth(sign_up=lambda _creds: None))
+    auth_response = _fake_auth_response(email="new@example.com")
+    client = _FakeClient(auth=_FakeAuth(sign_up=lambda _creds: auth_response))
     _patch_client(monkeypatch, client)
 
     assert request_signup_verification("new@example.com", "password123", "password123", True) is None
@@ -175,6 +178,18 @@ def test_request_signup_verification_already_registered_raises_valid_003(monkeyp
 
     with pytest.raises(AuthError) as exc_info:
         request_signup_verification("new@example.com", "password123", "password123", True)
+    assert exc_info.value.code == "VALID_003"
+
+
+def test_request_signup_verification_existing_confirmed_email_raises_valid_003(monkeypatch):
+    # Supabase는 이미 가입된(확인된) 이메일로 재가입을 시도해도 에러를 던지지 않고 identities가
+    # 빈 응답을 준다(이메일 존재 여부 비노출을 위한 보안 설계) — 이 케이스를 별도로 감지해야 한다.
+    auth_response = _fake_auth_response(email="existing@example.com", identities=[])
+    client = _FakeClient(auth=_FakeAuth(sign_up=lambda _creds: auth_response))
+    _patch_client(monkeypatch, client)
+
+    with pytest.raises(AuthError) as exc_info:
+        request_signup_verification("existing@example.com", "password123", "password123", True)
     assert exc_info.value.code == "VALID_003"
 
 
