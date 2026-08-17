@@ -2,6 +2,16 @@
 
 날짜순으로 기록합니다 (최신이 위).
 
+## 2026-08-12 (11)
+
+- 키워드 상세(DASH-002)의 연관 키워드(FR-DASH-004) 산정 로직을 실제 계산으로 교체. 기존엔
+  전체 목 키워드 풀에서 무작위 추출이었음 — `utils/statistics.pearson_correlation()`(Network
+  Graph 작업에서 만든 공통 통계 유틸)로 언급량 추이 시계열 간 상관계수를 구해 상관 절댓값이
+  가장 큰 상위 `RELATED_KEYWORDS_TOP_N`개를 추천(`dashboard_service._find_related_keywords()`).
+- `docs/KPI_Definitions.md`에 계산식과 함께 한계도 명시 — 입력 시계열이 키워드마다 독립적인
+  난수라 실제 의미적 연관성은 아직 반영되지 않음(Network Graph와 같은 한계).
+- 전체 테스트 129건 통과.
+
 ## 2026-08-12 (9)
 
 - 인사이트 리포트의 키워드 연관성 지도(Network Graph, FR-REPORT-003) 연결 로직을 실제 계산으로

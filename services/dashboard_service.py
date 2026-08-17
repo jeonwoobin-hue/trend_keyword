@@ -9,6 +9,9 @@ Spike Score(FR-DASH-003)는 `services/spike_score_service.calculate_spike_score(
 산출 공식을 적용한다 — 언급량 시계열 자체는 아직 목 데이터이지만, 점수는 그 시계열로부터
 문서화된 계산식(docs/KPI_Definitions.md)대로 정직하게 계산된다(난수 아님).
 
+연관 키워드(DASH-002)도 `utils/statistics.pearson_correlation()`로 언급량 추이 상관관계가 가장
+높은 키워드를 실제로 골라 보여준다(docs/KPI_Definitions.md 참고, 이전엔 무작위 추출이었음).
+
 연령·성별 관심도 가중치 보정(FR-DASH-005)은 실제 데이터 소스 미확보로 산정 방법이 미정이라
 (docs/KPI_Definitions.md 참고), 그룹별 상대 비중만 무작위로 생성해 보여준다.
 """
@@ -39,6 +42,7 @@ from models.dashboard import (
     TrendPoint,
 )
 from services.spike_score_service import calculate_spike_score
+from utils.statistics import pearson_correlation
 
 # 카테고리별 (keyword_id, keyword) 목 데이터 풀. CATEGORIES(config/constants.py)와 키가 일치해야 한다.
 _MOCK_KEYWORD_POOLS: dict[str, list[tuple[str, str]]] = {
@@ -279,10 +283,46 @@ def _build_mock_keywords(category: str, period: str) -> list[TrendKeyword]:
     return result
 
 
+def _generate_keyword_series(keyword_id: str, period: str) -> list[TrendPoint]:
+    """키워드 ID로 독립적으로 시드된 언급량 추이를 만든다.
+
+    카테고리 단위로 순서대로 뽑는 `_build_mock_keywords`와 달리, 이 함수는 임의의 키워드 하나의
+    시계열을 단독으로(다른 키워드와 무관하게) 재현 가능하게 만든다 — `_find_related_keywords()`가
+    후보 키워드 전부의 시계열을 필요로 하기 때문이다.
+    """
+    rng = random.Random(f"{keyword_id}:{period}:series")
+    return _generate_trend_points(rng, period)
+
+
+def _find_related_keywords(keyword_id: str, target_series: list[TrendPoint], period: str) -> list[str]:
+    """언급량 추이 상관관계(피어슨)가 가장 높은 다른 키워드 상위 `RELATED_KEYWORDS_TOP_N`개를 반환한다."""
+    target_counts = [point.mention_count for point in target_series]
+    candidates = [
+        (candidate_id, candidate_name)
+        for pool in _MOCK_KEYWORD_POOLS.values()
+        for candidate_id, candidate_name in pool
+        if candidate_id != keyword_id
+    ]
+    scored = [
+        (
+            abs(
+                pearson_correlation(
+                    target_counts,
+                    [point.mention_count for point in _generate_keyword_series(candidate_id, period)],
+                )
+            ),
+            candidate_name,
+        )
+        for candidate_id, candidate_name in candidates
+    ]
+    scored.sort(key=lambda item: item[0], reverse=True)
+    return [candidate_name for _, candidate_name in scored[:RELATED_KEYWORDS_TOP_N]]
+
+
 def _build_keyword_detail(keyword_id: str, name: str, category: str, period: str) -> KeywordDetail:
     """키워드 1건의 상세 목 데이터(추이·감성·연관 키워드)를 생성한다."""
+    trend_series = _generate_keyword_series(keyword_id, period)
     rng = random.Random(f"{keyword_id}:{period}:detail")
-    trend_series = _generate_trend_points(rng, period)
 
     sentiment = None
     if trend_series[-1].mention_count >= SENTIMENT_MIN_MENTION_COUNT:
@@ -294,8 +334,7 @@ def _build_keyword_detail(keyword_id: str, name: str, category: str, period: str
             neutral=round(1 - positive - negative, 2),
         )
 
-    related_pool = [kw for pool in _MOCK_KEYWORD_POOLS.values() for _, kw in pool if kw != name]
-    related_keywords = rng.sample(related_pool, k=min(RELATED_KEYWORDS_TOP_N, len(related_pool)))
+    related_keywords = _find_related_keywords(keyword_id, trend_series, period)
 
     demographics = DemographicWeights(
         age_group_weights=_build_demographic_weights(rng, [g for g, _ in AGE_GROUP_OPTIONS]),
