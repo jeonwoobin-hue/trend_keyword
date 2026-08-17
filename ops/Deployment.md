@@ -66,6 +66,7 @@
 | 항목 | 용도 | 위치(로컬 기준) |
 |---|---|---|
 | 외부 트렌드/소셜/뉴스 API 키 | [docs/API_Design.md](../docs/API_Design.md) §8 연동 현황 참고 | `.streamlit/secrets.toml` |
+| Gemini API 키(`[gemini] api_key`) | 인사이트 리포트 이슈 요약 생성(FR-REPORT-002) | `.streamlit/secrets.toml` — 비어 있으면 고정 템플릿 요약으로 자동 대체되어 앱은 정상 동작함(필수 아님) |
 | DB 접속 정보 | Supabase 등 | `.streamlit/secrets.toml` |
 | 앱 배포 URL(`[app] base_url`) | OAuth `redirect_to` 등 (`config.secrets.get_app_base_url()`) | `.streamlit/secrets.toml` — 환경마다 값이 다름(로컬 `http://localhost:8501`, Streamlit Cloud는 실제 배포 URL) |
 | JWT 시크릿 | 인증 토큰 서명 | 환경변수 |

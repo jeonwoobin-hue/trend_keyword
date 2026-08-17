@@ -248,6 +248,13 @@ WORD_CLOUD_TOP_N = 15
 NETWORK_GRAPH_NODE_TOP_N = 8
 REPORT_RECOMMENDED_KEYWORDS_TOP_N = 5
 
+# --- 이슈 요약(REPORT-002) AI 생성 정책 (functional-spec FR-REPORT-002) ---
+# Gemini 호출 실패(키 미설정/네트워크 오류/응답 없음) 시 report_service._build_fallback_summary()
+# 고정 템플릿으로 대체한다 — 리포트 생성 자체는 항상 성공해야 하므로 하드 에러로 처리하지 않음
+# (사용자 확인 완료, product/CHANGELOG.md 참고).
+GEMINI_SUMMARY_MODEL = "gemini-2.5-flash"
+GEMINI_REQUEST_TIMEOUT_MS = 8_000
+
 # --- 유사 관심사 비교 추천(REPORT-002) 정책 (SRS FR-REPORT-005) ---
 # 실제 사용자 행동 기반 유사도 클러스터링 전까지, 고정 매핑으로 "유사 분야"를 정의한다.
 # 산정 방법은 docs/KPI_Definitions.md "유사 관심사 비교 추천 키워드" 항목과 일치시킬 것.

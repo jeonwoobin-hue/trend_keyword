@@ -91,6 +91,7 @@ SRS §5.2에서 정의한 외부 연동 목록입니다. 아직 구현 전이며
 | 포털 뉴스 검색 API | 뉴스 기사 수집 | 미구현 |
 | 구글/카카오 소셜 로그인 | OAuth 2.0 인증 (FR-AUTH-002, P2) | 미구현 |
 | 이메일 발송 (SES/SMTP) | 급상승 알림, 인증 메일 발송 | 미구현 |
+| Gemini API | 인사이트 리포트 이슈 요약 생성 (FR-REPORT-002) | 2026-08-18 연동 완료 |
 
 각 연동을 구현할 때는 아래 형식(블로그 프로젝트 선례)으로 항목을 추가합니다:
 
@@ -103,3 +104,17 @@ SRS §5.2에서 정의한 외부 연동 목록입니다. 아직 구현 전이며
 - 실패 시: ...
 - 실제 호출로 확인한 제약/주의사항: ...
 ```
+
+### Gemini API
+- 모듈: `services/gemini_client.py`
+- 용도: 인사이트 리포트 이슈 요약(FR-REPORT-002) 생성(`services/report_service.py`
+  `_generate_ai_summary()`). `docs/Prompt_Guide.md`에 프롬프트 원칙 정의
+- 인증: API 키(`.streamlit/secrets.toml` `[gemini] api_key`, https://aistudio.google.com/apikey 발급).
+  하드코딩 없음 — 키가 비어 있으면 `GeminiConfigError`를 던짐
+- 캐싱: 없음. 리포트 생성 시마다 즉시 호출(요약은 조회마다 새로 생성되는 게 자연스러워 캐싱 대상 아님)
+- 실패 시: 키 미설정·타임아웃(`GEMINI_REQUEST_TIMEOUT_MS`, 8초)·빈 응답 등 어떤 예외든 잡아서
+  기존 고정 템플릿 요약(`_build_fallback_summary()`)으로 대체 — 리포트 생성 자체를 실패시키지
+  않음(§6 실패 처리 원칙과 달리 사용자에게 에러를 노출하지 않고 조용히 폴백하기로 결정, 근거는
+  이 항목과 product/CHANGELOG.md에 기록)
+- 실제 호출로 확인한 제약/주의사항: 로컬 개발 환경에는 기본적으로 키가 비어 있어(빈 문자열
+  스캐폴딩만 존재) 폴백 경로가 기본 동작 — 실제 AI 생성 경로는 키를 채워 넣은 후에만 검증 가능

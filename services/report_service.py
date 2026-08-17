@@ -1,8 +1,9 @@
 """인사이트 리포트 생성 도메인 로직 (functional-spec FR-REPORT-001/002/003, SRS FR-REPORT-005).
 
-실제 이슈 요약(AI) 산출 로직이 붙기 전까지, `_build_summary()`는 상위 키워드를 언급하는 고정
-템플릿 문장을 생성한다. 실제 연동 시 `generate_report()` 내부만 교체하고 시그니처/반환 타입
-(`Report`)은 유지한다.
+이슈 요약(FR-REPORT-002)은 2026-08-18부터 Gemini API로 실제 생성한다(`_generate_ai_summary()`,
+docs/Prompt_Guide.md 원칙 준수). 키 미설정·네트워크 오류·빈 응답 등 어떤 이유로든 호출이 실패하면
+`_build_fallback_summary()`(상위 키워드를 언급하는 고정 템플릿)로 대체한다 — 리포트 생성 자체가
+AI 가용성에 좌우되지 않도록 하기 위한 의도적 설계(사용자 확인 완료, product/CHANGELOG.md 참고).
 
 키워드 연관성 지도(FR-REPORT-003)의 Network Graph는 `utils/statistics.pearson_correlation()`로
 언급량 추이 시계열 간 상관관계를 실제로 계산해 연결한다(docs/KPI_Definitions.md 참고) — 노드는
@@ -14,13 +15,16 @@
 docs/KPI_Definitions.md와 일치시킬 것.
 """
 
+import logging
 import uuid
 from datetime import datetime, timezone
 
 from config.constants import (
     CATEGORIES,
+    GEMINI_SUMMARY_MODEL,
     MAX_REPORT_TITLE_LENGTH,
     NETWORK_GRAPH_NODE_TOP_N,
+    PERIOD_OPTIONS,
     REPORT_RECOMMENDED_KEYWORDS_TOP_N,
     SIMILAR_CATEGORIES,
     SIMILAR_GROUP_KEYWORDS_TOP_N,
@@ -29,9 +33,13 @@ from config.constants import (
 from models.dashboard import TrendKeyword
 from models.report import NetworkEdge, NetworkGraph, NetworkNode, Report, WordCloudItem
 from services.dashboard_service import get_dashboard_keywords
+from services.gemini_client import create_gemini_client
 from utils.statistics import pearson_correlation
 
+logger = logging.getLogger(__name__)
+
 _CATEGORY_LABELS = dict(CATEGORIES)
+_PERIOD_LABELS = dict(PERIOD_OPTIONS)
 
 
 class ReportValidationError(Exception):
@@ -64,7 +72,7 @@ def generate_report(category: str, period: str, title: str | None) -> Report:
         title=resolved_title,
         category=category,
         period=period,
-        summary=_build_summary(category_label, keywords),
+        summary=_build_summary(category_label, keywords, period),
         word_cloud=_build_word_cloud(keywords),
         network_graph=_build_network_graph(keywords),
         recommended_keywords=[k.keyword for k in keywords[:REPORT_RECOMMENDED_KEYWORDS_TOP_N]],
@@ -90,8 +98,53 @@ def get_report_by_id(reports: list[Report], report_id: str) -> Report | None:
     return next((report for report in reports if report.report_id == report_id), None)
 
 
-def _build_summary(category_label: str, keywords: list[TrendKeyword]) -> str:
-    """상위 키워드를 언급하는 요약 문장을 생성한다."""
+def _build_summary(category_label: str, keywords: list[TrendKeyword], period: str) -> str:
+    """이슈 요약(FR-REPORT-002)을 Gemini로 생성하고, 실패하면 고정 템플릿으로 대체한다."""
+    fallback = _build_fallback_summary(category_label, keywords)
+    if not keywords:
+        return fallback
+
+    try:
+        return _generate_ai_summary(category_label, keywords, period)
+    except Exception:
+        logger.exception("Gemini 이슈 요약 생성 실패 - 고정 템플릿으로 대체합니다.")
+        return fallback
+
+
+def _generate_ai_summary(category_label: str, keywords: list[TrendKeyword], period: str) -> str:
+    """상위 키워드 데이터를 근거로 Gemini에 이슈 요약 생성을 요청한다."""
+    client = create_gemini_client()
+    response = client.models.generate_content(
+        model=GEMINI_SUMMARY_MODEL,
+        contents=_build_summary_prompt(category_label, keywords, period),
+    )
+    text = (response.text or "").strip()
+    if not text:
+        raise ValueError("Gemini가 빈 응답을 반환했습니다.")
+    return text
+
+
+def _build_summary_prompt(category_label: str, keywords: list[TrendKeyword], period: str) -> str:
+    """docs/Prompt_Guide.md 원칙(핵심 결과·근거·불확실성 표시)을 반영한 프롬프트를 만든다."""
+    period_label = _PERIOD_LABELS.get(period, period)
+    top = keywords[:3]
+    keyword_lines = "\n".join(f"- {k.keyword} (Spike Score {k.spike_score:.1f})" for k in top)
+
+    return (
+        "당신은 트렌드 인사이트 플랫폼 TrendFit의 리포트 작성자입니다.\n"
+        f"아래는 '{category_label}' 분야의 {period_label} 언급량 기준 상위 키워드입니다:\n"
+        f"{keyword_lines}\n\n"
+        "이 데이터를 근거로 이슈 요약을 한국어 2~3문장으로 작성하세요. 다음을 반드시 지키세요.\n"
+        "1. 어떤 트렌드가 형성되고 있는지 핵심 결과를 먼저 제시할 것\n"
+        f"2. 근거로 위 키워드명과 '{period_label} 언급량 기준'이라는 표현을 자연스럽게 포함할 것\n"
+        "3. 전문 용어를 최소화하고 이해하기 쉬운 문장으로 쓸 것\n"
+        "4. 목록이나 마크다운 서식(별표, 헤더 등) 없이 자연스러운 문단으로 쓸 것\n"
+        "5. 위에 없는 사실을 추측해서 덧붙이지 말 것"
+    )
+
+
+def _build_fallback_summary(category_label: str, keywords: list[TrendKeyword]) -> str:
+    """Gemini 호출이 실패하거나 데이터가 없을 때 쓰는 고정 템플릿 요약."""
     if not keywords:
         return f"최근 {category_label} 분야에서 유의미한 트렌드 데이터를 찾지 못했습니다."
 

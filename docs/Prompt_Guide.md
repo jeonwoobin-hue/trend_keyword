@@ -13,7 +13,13 @@
 
 TrendFit에서 AI가 개입하는 대표 기능:
 
-- **인사이트 리포트 이슈 요약** (FR-REPORT-002): 어떤 키워드/이벤트를 근거로 요약했는지 함께 제시
+- **인사이트 리포트 이슈 요약** (FR-REPORT-002): 어떤 키워드/이벤트를 근거로 요약했는지 함께 제시.
+  2026-08-18부터 Gemini API(`services/gemini_client.py`, `config.constants.GEMINI_SUMMARY_MODEL`)로
+  실제 생성한다 — 프롬프트는 상위 키워드·Spike Score·조회 기간을 근거로 포함하도록 구성
+  (`report_service._build_summary_prompt()`). API 키 미설정이나 호출 실패 시 예외를 잡아 기존
+  고정 템플릿 요약으로 자동 대체한다(`report_service._build_fallback_summary()`) — 리포트 생성이
+  AI 가용성에 좌우되지 않도록 하기 위함(functional-spec.md는 이 실패 모드를 별도로 정의하지 않아
+  안전한 기본값으로 자체 결정, 사용자 확인 완료)
 - **유사 관심사 비교 추천 키워드** (FR-REPORT-005): 어떤 그룹 비교에서 도출됐는지 근거 명시
 - **급상승 알림 문구**: Spike Score 수치와 임계치를 함께 노출해 왜 알림이 왔는지 사용자가 알 수 있게 함
 

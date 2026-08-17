@@ -2,6 +2,22 @@
 
 날짜순으로 기록합니다 (최신이 위).
 
+## 2026-08-18 (1)
+
+- 인사이트 리포트 이슈 요약(FR-REPORT-002)을 고정 템플릿 문장에서 Gemini API 실제 생성으로
+  교체. `services/gemini_client.py`(신규, `supabase_client.py`와 같은 패턴) + `report_service.
+  _generate_ai_summary()`가 상위 키워드·Spike Score·조회 기간을 근거로 프롬프트를 구성해
+  호출(docs/Prompt_Guide.md 원칙 준수 — 핵심 결과·근거·불확실성 표시).
+- API 키 미설정이나 호출 실패(타임아웃·네트워크 오류·빈 응답 등) 시 예외를 잡아 기존 고정
+  템플릿(`_build_fallback_summary()`)으로 자동 대체하도록 설계 — 리포트 생성이 AI 가용성에
+  좌우되지 않게 하기 위함(사용자 확인 후 결정). 로컬 `.streamlit/secrets.toml`에는 빈
+  `[gemini] api_key` 스캐폴딩만 추가해둠 — 실제 키를 채우기 전까지는 폴백 경로로 동작.
+- `requirements.txt`에 `google-genai==2.18.1` 추가. `docs/API_Design.md` §8에 신규 연동 항목,
+  `docs/Feature_Roadmap.md`/`docs/Prompt_Guide.md`/`ops/Deployment.md` 동기화.
+- `tests/services/test_report_service.py`에 AI 생성 경로·폴백 경로(설정 오류/빈 응답)·프롬프트
+  근거 포함 여부 테스트 추가. 전체 테스트 133건 통과. 로그인 가드로 인해 실제 브라우저에서
+  전체 화면 확인은 못 함 — 실제 키를 넣은 뒤 REPORT-002 화면에서 직접 확인 필요.
+
 ## 2026-08-12 (11)
 
 - 키워드 상세(DASH-002)의 연관 키워드(FR-DASH-004) 산정 로직을 실제 계산으로 교체. 기존엔
